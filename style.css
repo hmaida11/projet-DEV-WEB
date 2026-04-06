@@ -105,7 +105,7 @@ body {
   border: none;
   border-radius: var(--radius-sm);
   background: rgba(255,255,255,.12);
-  color: white;
+  color: #333;
   font-family: var(--font-body);
   font-size: .88rem;
   outline: none;
@@ -133,7 +133,7 @@ body {
   border: none;
   border-radius: var(--radius-sm);
   background: rgba(255,255,255,.12);
-  color: white;
+  color: #333;
   font-family: var(--font-body);
   font-size: .88rem;
   cursor: pointer;
@@ -174,7 +174,7 @@ body {
   background: rgba(255,255,255,.18);
   border: 2px solid rgba(255,255,255,.3);
   display: flex; align-items: center; justify-content: center;
-  color: white;
+  color: #333;
   font-weight: 700;
   font-size: .9rem;
   cursor: pointer;
@@ -246,12 +246,12 @@ body {
 }
 .nav-item svg { width: 15px; height: 15px; flex-shrink: 0; }
 .nav-item:hover {
-  color: white;
+  color: #333;
   background: rgba(255,255,255,.07);
   border-left-color: rgba(255,255,255,.3);
 }
 .nav-item.active {
-  color: white;
+  color: #333;
   background: rgba(255,255,255,.12);
   border-left-color: var(--blue-vivid);
   font-weight: 600;
@@ -529,7 +529,7 @@ body {
 }
 .profile-item-icon svg { width: 16px; height: 16px; }
 .settings-icon { background: #e3f2fd; color: var(--blue-mid); }
-.history-icon  { background: #fff8e1; color: #f57c00; }
+.history-icon  { background: #fff8e1; color: var(--accent-gold); }
 .files-icon    { background: #e8f5e9; color: var(--accent-green); }
 .power-icon    { background: #fdecea; color: var(--accent-red); }
 
@@ -682,9 +682,9 @@ body {
   letter-spacing: .05em;
 }
 .type-exercices { background: var(--blue-light); color: var(--blue-mid); }
-.type-examens   { background: #fff3e0; color: #e65100; }
-.type-cours     { background: #e8f5e9; color: #2e7d32; }
-.type-td        { background: #fce4ec; color: #880e4f; }
+.type-examens   { background: #fff3e0; color: var(--accent-orange); }
+.type-cours     { background: #e8f5e9; color: var(--accent-green); }
+.type-td        { background: #fce4ec; color: var(--accent-pink); }
 .fichier-delete {
   background: none; border: none;
   color: var(--text-muted); cursor: pointer;
