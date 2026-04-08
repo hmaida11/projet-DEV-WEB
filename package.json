@@ -2,6 +2,7 @@
   "name": "faculte-backend",
   "version": "1.0.0",
   "description": "Backend API REST pour l'interface Faculté",
+  "type": "module",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -9,9 +10,10 @@
   },
   "dependencies": {
     "cors": "^2.8.5",
+    "dotenv": "^17.4.1",
     "express": "^4.18.2"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "nodemon": "^3.1.14"
   }
 }
