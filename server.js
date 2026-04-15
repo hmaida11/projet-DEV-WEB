@@ -1,10 +1,14 @@
-const express = require("express");
-const cors = require("cors");
-const app = express();
+import supabase from "./database.js";
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
 
+const app=express();
 app.use(cors());
 app.use(express.json());
-
+dotenv.config({
+  path:"./.env",
+});
 // ─── DATA ────────────────────────────────────────────────────────────────────
 
 const sections = [
@@ -276,10 +280,26 @@ app.use((req, res) => {
   res.status(404).json({ success: false, message: `Route "${req.method} ${req.path}" introuvable.` });
 });
 
+// test db connectivity
+export const testdb=async()=>{
+  try{
+      const {data,error}= await supabase
+        .from ('users')
+        .select('*')
+        .limit('1');
+        if(error) throw error;
+        console.log("supabase reachable");
+      return true;}
+  catch (error) {
+        console.error('Cannot reach Supabase');
+        return false;
+    }
+     }
+testdb();
 // ─── START ────────────────────────────────────────────────────────────────────
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`✅  Serveur Faculté démarré sur http://localhost:${PORT}`);
+app.listen(process.env.port, () => {
+  console.log(`✅  Serveur Faculté démarré sur http://localhost:${process.env.port}`);
   console.log(`📚  ${ressources.length} ressources chargées — ${users.length} utilisateurs simulés`);
 });
+
+export default app;
