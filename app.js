@@ -466,3 +466,4 @@ document.getElementById("modalOverlay").addEventListener("click", e => {
   renderCards(data);
   document.getElementById("statTotal").textContent = data.length;
 })();
+
