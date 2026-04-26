@@ -461,6 +461,102 @@ document.getElementById("btnDeconnexion").addEventListener("click", async () => 
 });
 
 /* ════════════════════════════════════════════════
+   MODAL ÉMETTRE
+════════════════════════════════════════════════ */
+const emOverlay = document.getElementById("emettreOverlay");
+const emClose   = document.getElementById("emettreClose");
+const emCancel  = document.getElementById("emettreCancel");
+const btnEmettre = document.getElementById("btnEmettre");
+const emDropZone = document.getElementById("emDropZone");
+const emFileInput = document.getElementById("em-file");
+const emFilename = document.getElementById("em-filename");
+const emSubmit   = document.getElementById("emettreSubmit");
+
+// Ouvrir
+btnEmettre.addEventListener("click", () => {
+  emOverlay.classList.add("open");
+});
+
+// Fermer
+[emClose, emCancel].forEach(btn => {
+  btn.addEventListener("click", () => {
+    emOverlay.classList.remove("open");
+  });
+});
+
+// Dropzone & File selection
+emDropZone.addEventListener("click", () => emFileInput.click());
+
+emFileInput.addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    emFilename.textContent = `Fichier sélectionné : ${file.name}`;
+  }
+});
+
+emDropZone.addEventListener("dragover", (e) => {
+  e.preventDefault();
+  emDropZone.style.borderColor = "var(--primary)";
+  emDropZone.style.background = "#f0f7ff";
+});
+
+emDropZone.addEventListener("dragleave", () => {
+  emDropZone.style.borderColor = "#e0e0e0";
+  emDropZone.style.background = "#fafafa";
+});
+
+emDropZone.addEventListener("drop", (e) => {
+  e.preventDefault();
+  emDropZone.style.borderColor = "#e0e0e0";
+  emDropZone.style.background = "#fafafa";
+  const file = e.dataTransfer.files[0];
+  if (file) {
+    emFileInput.files = e.dataTransfer.files;
+    emFilename.textContent = `Fichier sélectionné : ${file.name}`;
+  }
+});
+
+// Submit
+emSubmit.addEventListener("click", async () => {
+  const titre   = document.getElementById("em-titre").value;
+  const type    = document.getElementById("em-type").value;
+  const section = document.getElementById("em-section").value;
+  const niveau  = document.getElementById("em-niveau").value;
+  const annee   = document.getElementById("em-annee").value;
+  const file    = emFileInput.files[0];
+
+  if (!titre || !type || !section || !niveau || !annee) {
+    showToast("Veuillez remplir tous les champs obligatoires (*)");
+    return;
+  }
+
+  if (!file) {
+    showToast("Veuillez sélectionner un fichier à télécharger.");
+    return;
+  }
+
+  // Simulation d'envoi
+  emSubmit.disabled = true;
+  emSubmit.textContent = "Envoi...";
+
+  setTimeout(() => {
+    showToast(`Ressource "${titre}" (${annee}) ajoutée avec succès !`);
+    emSubmit.disabled = false;
+    emSubmit.textContent = "Ajouter";
+    emOverlay.classList.remove("open");
+    
+    // Réinitialisation du formulaire
+    document.getElementById("em-titre").value = "";
+    document.getElementById("em-type").value = "";
+    document.getElementById("em-section").value = "";
+    document.getElementById("em-niveau").value = "";
+    document.getElementById("em-annee").value = "";
+    emFileInput.value = "";
+    emFilename.textContent = "";
+  }, 1500);
+});
+
+/* ════════════════════════════════════════════════
    MODAL CLOSE
 ════════════════════════════════════════════════ */
 document.getElementById("modalClose").addEventListener("click", closeModal);
