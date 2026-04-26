@@ -1,418 +1,249 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Faculté — Portail Académique</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculté Connect - Authentification</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root { --primary: #1a202c; --accent: #3182ce; --bg: #f7fafc; --glass: rgba(255, 255, 255, 0.95); }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        
+        .auth-card { background: var(--glass); padding: 40px; border-radius: 12px; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); width: 100%; max-width: 450px; border: 1px solid #e2e8f0; }
+        .hidden { display: none !important; }
+
+        h2 { color: var(--primary); font-weight: 800; font-size: 1.8rem; margin-bottom: 8px; text-align: center; }
+        p.subtitle { text-align: center; color: #718096; margin-bottom: 30px; font-size: 0.9rem; }
+
+        .form-group { margin-bottom: 18px; }
+        label { display: block; font-weight: 600; margin-bottom: 6px; font-size: 0.85rem; color: var(--primary); }
+        
+        input, select { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; box-sizing: border-box; transition: all 0.2s; font-size: 0.9rem; }
+        input:focus { border-color: var(--accent); outline: none; box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1); }
+
+        .btn-submit { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; margin-top: 10px; transition: 0.3s; }
+        .btn-submit:hover { background: #2d3748; transform: translateY(-2px); }
+
+        .link-action { display: block; text-align: center; margin-top: 15px; font-size: 0.85rem; color: var(--accent); cursor: pointer; font-weight: 600; }
+        .conditional-section { background: #edf2f7; padding: 15px; border-radius: 8px; margin-top: 10px; border-left: 4px solid var(--accent); animation: slideIn 0.3s ease-out; }
+
+        /* Carte Bancaire Stylisée */
+        .card-visual { background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%); border-radius: 12px; padding: 20px; color: white; margin-bottom: 20px; box-shadow: 0 8px 15px rgba(0,0,0,0.2); font-family: 'Courier New', monospace; position: relative; }
+        .card-chip { width: 40px; height: 30px; background: #ecc94b; border-radius: 4px; margin-bottom: 20px; }
+        #card-display-number { font-size: 1.2rem; letter-spacing: 2px; margin-bottom: 15px; }
+        .card-bottom { display: flex; justify-content: space-between; font-size: 0.8rem; text-transform: uppercase; }
+
+        .security-badge { display: flex; align-items: center; gap: 8px; font-size: 0.7rem; color: #48bb78; background: #f0fff4; padding: 8px; border-radius: 6px; margin-top: 10px; border: 1px solid #c6f6d5; }
+        
+        @keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
 </head>
 <body>
 
-  <!-- ═══════════════════════════════════════════════
-       TOPBAR
-  ════════════════════════════════════════════════ -->
-  <header class="topbar">
-    <div class="logo">
-      <div class="logo-icon">
-        <img src="https://upload.wikimedia.org/wikipedia/fr/0/06/ISIM_LOGO_ar.png" alt="ISIMM Logo" style="width: 40px; height: 40px; object-fit: contain;"/>
-      </div>
-      <span class="logo-text">ISIMM</span>
+<div class="auth-card">
+    
+    <div id="view-login">
+        <h2>Connexion</h2>
+        <p class="subtitle">Heureux de vous revoir !</p>
+        <form id="form-login">
+            <div class="form-group"><label>Email universitaire</label><input type="email" id="login-email" required placeholder="nom.prenom@ecole.tn"></div>
+            <div class="form-group"><label>Mot de passe</label><input type="password" id="login-pass" required placeholder="••••••••"></div>
+            <button type="submit" class="btn-submit">Se connecter</button>
+            <span class="link-action" onclick="switchView('view-forgot')">Mot de passe oublié ?</span>
+            <span class="link-action" onclick="switchView('view-register')">Pas encore de compte ? S'inscrire</span>
+        </form>
     </div>
 
-    <div class="search-bar">
-      <div class="search-input-wrap">
-        <svg class="search-icon" viewBox="0 0 20 20" fill="none">
-          <circle cx="8.5" cy="8.5" r="5.5" stroke="currentColor" stroke-width="1.6"/>
-          <path d="M13 13L17 17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-        </svg>
-        <input type="text" id="searchInput" placeholder="Rechercher un cours..." autocomplete="off" />
-      </div>
-      <div class="category-select-wrap">
-        <select id="categorySelect">
-          <option>Tous</option>
-          <option>Séries d'exercices</option>
-          <option>Sujets d'Examens</option>
-          <option>Cours &amp; Supports</option>
-          <option>Travaux Dirigés</option>
-        </select>
-        <svg class="select-arrow" viewBox="0 0 12 8" fill="none">
-          <path d="M1 1L6 6L11 1" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-        </svg>
-      </div>
-      <button class="btn-search" id="searchBtn">Rechercher</button>
+    <div id="view-register" class="hidden">
+        <h2>Inscription</h2>
+        <p class="subtitle">Créez votre accès personnel</p>
+        <form id="form-register">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;" class="form-group">
+                <div><label>Prénom</label><input type="text" id="reg-prenom" required placeholder="Iheb"></div>
+                <div><label>Nom</label><input type="text" id="reg-nom" required placeholder="Zarrouk"></div>
+            </div>
+            <div class="form-group"><label>Email</label><input type="email" id="reg-email" required placeholder="votre@email.com"></div>
+            <div class="form-group"><label>Mot de passe</label><input type="password" id="reg-pass" required minlength="8" placeholder="Min. 8 caractères"></div>
+            
+            <div class="form-group">
+                <label>Vous êtes ?</label>
+                <select id="reg-type" onchange="toggleRegFields()">
+                    <option value="interne">Étudiant / Prof de l'établissement</option>
+                    <option value="etranger">Externe (Accès Payant)</option>
+                </select>
+            </div>
 
-      <button class="btn-emettre" id="btnEmettre">
-        <svg viewBox="0 0 16 16" fill="none">
-          <path d="M8 3v8M4 7l4-4 4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M2 12h12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-        </svg>
-        Émettre
-      </button>
+            <div id="section-interne" class="conditional-section form-group">
+                <label>Code d'activation (7 chiffres)</label>
+                <input type="text" id="reg-code" maxlength="7" placeholder="Ex: 8529631">
+            </div>
+
+            <div id="section-etranger" class="conditional-section hidden">
+                <div class="form-group">
+    <label>Plan d'abonnement</label>
+    <select id="reg-plan" onchange="updatePriceDisplay()">
+        <option value="9.99">Mensuel - 9.99 € / mois</option>
+        <option value="89.99">Annuel - 89.99 € / an (Économisez 25%)</option>
+    </select>
+</div>
+
+<div id="price-badge" class="security-badge" style="background: #ebf8ff; border-color: #bee3f8; color: #2b6cb0; margin-bottom: 15px;">
+    <div id="price-text">💰 Total à régler : 9.99 €</div>
+</div>
+                <label style="font-weight: 800; margin-bottom: 10px; display: block;">💳 Paiement Sécurisé</label>
+                
+                <div class="card-visual">
+                    <div class="card-chip"></div>
+                    <div id="card-display-number">•••• •••• •••• ••••</div>
+                    <div class="card-bottom">
+                        <div id="card-display-name">NOM PRÉNOM</div>
+                        <div id="card-display-expiry">MM/AA</div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Numéro de carte</label>
+                    <input type="text" id="card-num" placeholder="0000 0000 0000 0000" maxlength="19">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="form-group"><label>Expiration</label><input type="text" id="card-exp" placeholder="MM/AA" maxlength="5"></div>
+                    <div class="form-group"><label>CVC</label><input type="password" id="card-cvc" placeholder="***" maxlength="3"></div>
+                </div>
+                <div class="security-badge">
+                    <span>🔒 Paiement crypté SSL 256-bit</span>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit">Confirmer l'inscription</button>
+            <span class="link-action" onclick="switchView('view-login')">← Retour à la connexion</span>
+        </form>
     </div>
 
-    <div class="topbar-avatar" id="avatarBtn" title="Mon compte">
-      <span>A</span>
-      <div class="avatar-dot"></div>
+    <div id="view-forgot" class="hidden">
+        <h2>Récupération</h2>
+        <p class="subtitle">Entrez votre email pour recevoir un lien.</p>
+        <form id="form-forgot">
+            <div class="form-group">
+                <label>Votre Email</label>
+                <input type="email" id="forgot-email" required placeholder="nom@exemple.com">
+            </div>
+            <button type="submit" class="btn-submit">Réinitialiser le mot de passe</button>
+            <span class="link-action" onclick="switchView('view-login')">← Retour à la connexion</span>
+        </form>
     </div>
-  </header>
 
-  <!-- ═══════════════════════════════════════════════
-       LAYOUT
-  ════════════════════════════════════════════════ -->
-  <div class="layout">
+</div>
 
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
+<script>
+    // --- NAVIGATION ---
+   // Fonction pour gérer la navigation entre vues sans recharger
+function switchView(viewId) {
+    document.getElementById('view-login').classList.add('hidden');
+    document.getElementById('view-register').classList.add('hidden');
+    document.getElementById('view-forgot').classList.add('hidden');
+    document.getElementById(viewId).classList.remove('hidden');
+}
 
-      <nav class="nav-group">
-        <div class="nav-group-title">
-          <svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-          Les Sections
-        </div>
-        <ul class="nav-list" id="sectionsList">
-          <li class="nav-item active" data-filter="section" data-value="Tous">
-            <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M8 5v3l2 2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-            Toutes
-          </li>
-          <li class="nav-item" data-filter="section" data-value="Informatique">
-            <svg viewBox="0 0 16 16" fill="none">
-              <rect x="1" y="2" width="14" height="10" rx="1.5" stroke="currentColor" stroke-width="1.3"/>
-              <path d="M5 14h6M8 12v2" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
-            </svg>
-            Informatique
-          </li>
+// 2. Bloc de connexion
+document.getElementById('form-login').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('login-email').value;
+    const password = document.getElementById('login-pass').value;
 
-          <li class="nav-item" data-filter="section" data-value="Mathématiques">
-            <svg viewBox="0 0 16 16" fill="none">
-              <path d="M3 3l4 5-4 5h2l3-4 3 4h2L9 8l4-5h-2L8 7 5 3H3z"
-                    stroke="currentColor" stroke-width="1.1"
-                    stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            Mathématiques
-          </li>
+    try {
+        const res = await fetch('http://localhost:3000/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+        const result = await res.json();
 
-          <li class="nav-item" data-filter="section" data-value="EEA">
-            <svg viewBox="0 0 16 16" fill="none">
-              <path d="M2 8h3l1.5-3 2 6 1.5-4L11 8h3"
-                    stroke="currentColor" stroke-width="1.3"
-                    stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            EEA
-          </li>
+        if (result.success) {
+            localStorage.setItem('userSession', JSON.stringify(result.data.user));
+            window.location.href = 'dashboard.html';
+        } else {
+            alert("Erreur : " + result.message);
+        }
+    } catch (err) {
+        alert("Erreur de connexion au serveur.");
+    }
+});
 
-          <li class="nav-item" data-filter="section" data-value="TIC">
-            <svg viewBox="0 0 16 16" fill="none">
-              <circle cx="8" cy="8" r="1.5" fill="currentColor"/>
-              <circle cx="3" cy="4" r="1.2" stroke="currentColor" stroke-width="1.1"/>
-              <circle cx="13" cy="4" r="1.2" stroke="currentColor" stroke-width="1.1"/>
-              <circle cx="3" cy="12" r="1.2" stroke="currentColor" stroke-width="1.1"/>
-              <circle cx="13" cy="12" r="1.2" stroke="currentColor" stroke-width="1.1"/>
-              <path d="M4 4.8l2.8 2.5M12 4.8L9.2 7.3M4 11.2l2.8-2.5M12 11.2L9.2 8.7"
-                    stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/>
-            </svg>
-            TIC
-          </li>
-        </ul>
-      </nav>
+    function toggleRegFields() {
+        const type = document.getElementById('reg-type').value;
+        document.getElementById('section-interne').classList.toggle('hidden', type !== 'interne');
+        document.getElementById('section-etranger').classList.toggle('hidden', type !== 'etranger');
+    }
 
-      <nav class="nav-group">
-        <div class="nav-group-title">
-          <svg viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h12M2 12h8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-          Les Niveaux
-        </div>
-        <ul class="nav-list" id="niveauxList">
-          <li class="nav-item" data-filter="niveau" data-value="Licence 1">
-            <svg viewBox="0 0 16 16" fill="none"><rect x="3" y="10" width="2" height="4" rx="0.5" fill="currentColor"/><rect x="7" y="7" width="2" height="7" rx="0.5" fill="currentColor" opacity="0.5"/><rect x="11" y="4" width="2" height="10" rx="0.5" fill="currentColor" opacity="0.3"/></svg>
-            Licence 1
-          </li>
-          <li class="nav-item" data-filter="niveau" data-value="Licence 2">
-            <svg viewBox="0 0 16 16" fill="none"><rect x="3" y="10" width="2" height="4" rx="0.5" fill="currentColor"/><rect x="7" y="7" width="2" height="7" rx="0.5" fill="currentColor" opacity="0.7"/><rect x="11" y="4" width="2" height="10" rx="0.5" fill="currentColor" opacity="0.3"/></svg>
-            Licence 2
-          </li>
-          <li class="nav-item" data-filter="niveau" data-value="Licence 3">
-            <svg viewBox="0 0 16 16" fill="none"><rect x="3" y="8" width="2" height="6" rx="0.5" fill="currentColor"/><rect x="7" y="5" width="2" height="9" rx="0.5" fill="currentColor" opacity="0.7"/><rect x="11" y="2" width="2" height="12" rx="0.5" fill="currentColor"/></svg>
-            Licence 3
-          </li>
-          <li class="nav-item" data-filter="niveau" data-value="Master">
-            <svg viewBox="0 0 16 16" fill="none"><path d="M8 2l1.5 4h4l-3.2 2.4 1.2 3.8L8 10l-3.5 2.2 1.2-3.8L2.5 6h4L8 2z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
-            Master
-          </li>
-          <li class="nav-item" data-filter="niveau" data-value="Doctorat">
-            <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="6" r="3" stroke="currentColor" stroke-width="1.3"/><path d="M4 14s0-4 4-4 4 4 4 4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
-            Doctorat
-          </li>
-        </ul>
-      </nav>
+    // --- MISE À JOUR VISUELLE DE LA CARTE ---
+    const cardNumInput = document.getElementById('card-num');
+    const cardExpInput = document.getElementById('card-exp');
+    const nameInputPrenom = document.getElementById('reg-prenom');
+    const nameInputNom = document.getElementById('reg-nom');
 
-    </aside>
+    cardNumInput.addEventListener('input', (e) => {
+        let val = e.target.value.replace(/\D/g, '').substring(0, 16);
+        val = val !== '' ? val.match(/.{1,4}/g).join(' ') : '•••• •••• •••• ••••';
+        e.target.value = val === '•••• •••• •••• ••••' ? '' : val;
+        document.getElementById('card-display-number').innerText = val;
+    });
 
-    <!-- MAIN -->
-    <main class="main-content">
+    cardExpInput.addEventListener('input', (e) => {
+        let val = e.target.value.replace(/\D/g, '').substring(0, 4);
+        if(val.length > 2) val = val.substring(0,2) + '/' + val.substring(2);
+        e.target.value = val;
+        document.getElementById('card-display-expiry').innerText = val || 'MM/AA';
+    });
 
-      <!-- Cards grid -->
-      <div class="cards-grid" id="cardsGrid">
+    [nameInputPrenom, nameInputNom].forEach(input => {
+        input.addEventListener('input', () => {
+            const full = (nameInputPrenom.value + ' ' + nameInputNom.value).toUpperCase();
+            document.getElementById('card-display-name').innerText = full.trim() || 'NOM PRÉNOM';
+        });
+    });
 
-        <div class="resource-card" data-type="exercices" id="card-exercices">
-          <div class="card-header">
-            <h2 class="card-title">Séries d'exercices</h2>
-            <div class="card-badge">
-              <span id="badge-exercices">—</span>
-            </div>
-          </div>
-          <div class="card-body">
-            <div class="card-illustration ex-illustration">
-              <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="15" y="10" width="42" height="55" rx="4" fill="#e8f0fe" stroke="#4a80f5" stroke-width="1.5"/>
-                <path d="M25 28h22M25 36h22M25 44h14" stroke="#4a80f5" stroke-width="2" stroke-linecap="round"/>
-                <circle cx="56" cy="56" r="14" fill="#4a80f5"/>
-                <path d="M50 56l4 4 8-8" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <div class="card-preview" id="preview-exercices">
-              <p class="card-preview-empty">Cliquez pour voir les exercices</p>
-            </div>
-          </div>
-          <button class="card-cta" data-type="exercices">
-            Voir les exercices
-            <svg viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-        </div>
+    function updatePriceDisplay() {
+        const plan = document.getElementById('reg-plan').value;
+        document.getElementById('price-text').innerHTML = `Total à régler : ${plan} €`;
+    }
 
-        <div class="resource-card" data-type="examens" id="card-examens">
-          <div class="card-header">
-            <h2 class="card-title">Sujets d'Examens</h2>
-            <div class="card-badge">
-              <span id="badge-examens">—</span>
-            </div>
-          </div>
-          <div class="card-body">
-            <div class="card-illustration ex-illustration">
-              <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="12" y="8" width="44" height="56" rx="4" fill="#fff3e0" stroke="#f5a623" stroke-width="1.5"/>
-                <path d="M22 26h28M22 34h28M22 42h18" stroke="#f5a623" stroke-width="2" stroke-linecap="round"/>
-                <circle cx="54" cy="54" r="14" fill="#f5a623"/>
-                <path d="M48 54h12M54 48v12" stroke="white" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-            </div>
-            <div class="card-preview" id="preview-examens">
-              <p class="card-preview-empty">Cliquez pour voir les examens</p>
-            </div>
-          </div>
-          <button class="card-cta" data-type="examens">
-            Voir les examens
-            <svg viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-        </div>
+    document.getElementById('form-register').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const type = document.getElementById('reg-type').value;
+        
+        if(type === 'etranger') {
+            if(document.getElementById('card-num').value.length < 19) return alert("Numéro de carte incomplet.");
+        }
 
-        <div class="resource-card" data-type="cours" id="card-cours">
-          <div class="card-header">
-            <h2 class="card-title">Cours &amp; Supports</h2>
-            <div class="card-badge">
-              <span id="badge-cours">—</span>
-            </div>
-          </div>
-          <div class="card-body">
-            <div class="card-illustration ex-illustration">
-              <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="8" y="18" width="40" height="50" rx="3" fill="#e8f5e9" stroke="#43a047" stroke-width="1.5"/>
-                <rect x="16" y="10" width="40" height="50" rx="3" fill="#f1f8e9" stroke="#7cb342" stroke-width="1.5"/>
-                <path d="M26 30h20M26 38h20M26 46h12" stroke="#43a047" stroke-width="2" stroke-linecap="round"/>
-                <circle cx="55" cy="55" r="13" fill="#43a047"/>
-                <path d="M51 55l3 3 6-6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <div class="card-preview" id="preview-cours">
-              <p class="card-preview-empty">Cliquez pour voir les cours</p>
-            </div>
-          </div>
-          <button class="card-cta" data-type="cours">
-            Voir les cours
-            <svg viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-        </div>
+        const payload = {
+            prenom: document.getElementById('reg-prenom').value,
+            nom: document.getElementById('reg-nom').value,
+            email: document.getElementById('reg-email').value,
+            password: document.getElementById('reg-pass').value,
+            type_utilisateur: type,
+            plan_duree: type === 'etranger' ? document.getElementById('reg-plan').value : null,
+            code_inscription: document.getElementById('reg-code').value,
+            card_info: type === 'etranger' ? {
+                number: document.getElementById('card-num').value,
+                expiry: document.getElementById('card-exp').value
+            } : null
+        };
 
-        <div class="resource-card" data-type="td" id="card-td">
-          <div class="card-header">
-            <h2 class="card-title">Travaux Dirigés</h2>
-            <div class="card-badge">
-              <span id="badge-td">—</span>
-            </div>
-          </div>
-          <div class="card-body">
-            <div class="card-illustration ex-illustration">
-              <svg viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="30" cy="32" r="12" fill="#fce4ec" stroke="#e91e63" stroke-width="1.5"/>
-                <circle cx="52" cy="32" r="12" fill="#f3e5f5" stroke="#9c27b0" stroke-width="1.5"/>
-                <path d="M24 60s0-10 6-10h20c6 0 6 10 6 10" stroke="#e91e63" stroke-width="1.5" stroke-linecap="round"/>
-                <path d="M36 44v8M44 44v8" stroke="#9c27b0" stroke-width="1.5" stroke-linecap="round"/>
-              </svg>
-            </div>
-            <div class="card-preview" id="preview-td">
-              <p class="card-preview-empty">Cliquez pour voir les TD</p>
-            </div>
-          </div>
-          <button class="card-cta" data-type="td">
-            Voir les TD
-            <svg viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          </button>
-        </div>
-
-      </div>
-
-      <!-- Results panel (hidden by default) -->
-      <div class="results-panel" id="resultsPanel" style="display:none">
-        <div class="results-header">
-          <h3 id="resultsTitle">Résultats</h3>
-          <button class="results-close" id="closeResults">
-            <svg viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-          </button>
-        </div>
-        <ul class="results-list" id="resultsList"></ul>
-      </div>
-
-    </main>
-
-    <!-- PROFILE PANEL -->
-    <aside class="profile-panel">
-      <h3 class="profile-title">Paramètres du Profil</h3>
-      <ul class="profile-menu">
-        <li class="profile-item" id="btnProfil">
-          <div class="profile-item-icon settings-icon">
-            <svg viewBox="0 0 20 20" fill="none"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z" stroke="currentColor" stroke-width="1.5"/><path d="M17 10a7 7 0 11-14 0 7 7 0 0114 0z" stroke="currentColor" stroke-width="1.5"/><path d="M10 3v1M10 16v1M3 10h1M16 10h1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-          </div>
-          Réglages du Profil
-        </li>
-        <li class="profile-item" id="btnHistorique">
-          <div class="profile-item-icon history-icon">
-            <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="currentColor" stroke-width="1.5"/><path d="M10 6v4l3 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-          </div>
-          Historique de Recherche
-        </li>
-        <li class="profile-item" id="btnFichiers">
-          <div class="profile-item-icon files-icon">
-            <svg viewBox="0 0 20 20" fill="none"><path d="M10 3v10M6 9l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 15h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-          </div>
-          Fichiers Installés
-        </li>
-        <li class="profile-item danger" id="btnDeconnexion">
-          <div class="profile-item-icon power-icon">
-            <svg viewBox="0 0 20 20" fill="none"><path d="M10 4v6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M7 5.8A6 6 0 1013 5.8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-          </div>
-          Déconnexion
-        </li>
-      </ul>
-
-      <!-- Mini stats -->
-      <div class="mini-stats">
-        <div class="mini-stat">
-          <span class="mini-stat-value" id="statTotal">22</span>
-          <span class="mini-stat-label">Ressources</span>
-        </div>
-        <div class="mini-stat">
-          <span class="mini-stat-value">4</span>
-          <span class="mini-stat-label">Sections</span>
-        </div>
-        <div class="mini-stat">
-          <span class="mini-stat-value">5</span>
-          <span class="mini-stat-label">Niveaux</span>
-        </div>
-      </div>
-    </aside>
-
-  </div><!-- /layout -->
-
-  <!-- ═══════════════════════════════════════════════
-       MODAL
-  ════════════════════════════════════════════════ -->
-  <div class="modal-overlay" id="modalOverlay">
-    <div class="modal" id="modal">
-      <button class="modal-close" id="modalClose">
-        <svg viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-      </button>
-      <h2 class="modal-title" id="modalTitle">Titre</h2>
-      <div class="modal-body" id="modalBody"></div>
-    </div>
-  </div>
-
-  <!-- TOAST -->
-  <div class="toast" id="toast"></div>
-
-  <script src="app.js"></script>
-  <!-- MODAL ÉMETTRE -->
-  <div class="modal-overlay" id="emettreOverlay">
-    <div class="modal" id="emettreModal">
-      <button class="modal-close" id="emettreClose">
-        <svg viewBox="0 0 16 16" fill="none">
-          <path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-        </svg>
-      </button>
-      <h2 class="modal-title">Ajouter une ressource</h2>
-      <div class="modal-body">
-
-        <div class="form-field">
-          <label>Titre *</label>
-          <input type="text" id="em-titre" placeholder="Ex: Analyse — Examen 2024" />
-        </div>
-
-        <div class="form-row">
-          <div class="form-field">
-            <label>Type *</label>
-            <select id="em-type">
-              <option value="">Choisir...</option>
-              <option value="exercices">Séries d'exercices</option>
-              <option value="examens">Sujets d'Examens</option>
-              <option value="cours">Cours &amp; Supports</option>
-              <option value="td">Travaux Dirigés</option>
-            </select>
-          </div>
-          <div class="form-field">
-            <label>Section *</label>
-            <select id="em-section">
-              <option value="">Choisir...</option>
-              <option>Informatique</option>
-              <option>Mathématiques</option>
-              <option>EEA</option>
-              <option>TIC</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="form-field">
-          <label>Niveau *</label>
-          <select id="em-niveau">
-            <option value="">Choisir...</option>
-            <option>Licence 1</option>
-            <option>Licence 2</option>
-            <option>Licence 3</option>
-            <option>Master</option>
-            <option>Doctorat</option>
-          </select>
-        </div>
-
-        <div class="form-field">
-          <label>Fichier</label>
-          <div class="drop-zone" id="emDropZone">
-            <svg viewBox="0 0 24 24" fill="none" width="28" height="28">
-              <path d="M12 15V3M7 8l5-5 5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              <path d="M3 18h18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
-            </svg>
-            <p>Glisser-déposer ou <strong>cliquer</strong> pour choisir</p>
-            <span>PDF, DOCX, PPTX — max 20 Mo</span>
-            <input type="file" id="em-file" style="display:none" accept=".pdf,.doc,.docx,.pptx"/>
-            <p id="em-filename" style="color:#43a047;font-weight:500;margin-top:6px"></p>
-          </div>
-        </div>
-
-        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
-          <button class="btn-secondary" id="emettreCancel">Annuler</button>
-          <button class="btn-primary" id="emettreSubmit">Ajouter</button>
-        </div>
-
-      </div>
-    </div>
-  </div>
+        try {
+            const res = await fetch('http://localhost:3000/api/auth/register', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if(data.success) {
+                alert("Compte créé avec succès !");
+                switchView('view-login');
+            } else alert(data.message);
+        } catch (err) {
+            alert("Erreur de connexion au serveur.");
+        }
+    });
+</script>
 </body>
 </html>
