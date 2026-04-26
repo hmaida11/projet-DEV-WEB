@@ -4,7 +4,17 @@
 ════════════════════════════════════════════════ */
 
 const API = "http://localhost:3000/api";
-const USER_ID = 1; // Utilisateur simulé connecté
+
+// --- Gestion de la session ---
+const userSession = JSON.parse(localStorage.getItem('userSession'));
+
+if (!userSession) {
+  // Redirection si l'utilisateur n'est pas connecté
+  window.location.href = "index.html";
+}
+
+const USER_ID = userSession.id;
+const USER_NAME = userSession.prenom || "Étudiant";
 
 /* ── Données locales de fallback (si backend éteint) ── */
 const LOCAL_DATA = [
@@ -462,8 +472,26 @@ document.getElementById("modalOverlay").addEventListener("click", e => {
    INIT
 ════════════════════════════════════════════════ */
 (async function init() {
+  // Mise à jour de l'UI avec les infos de session
+  const avatarSpan = document.querySelector(".topbar-avatar span");
+  if (avatarSpan) avatarSpan.textContent = USER_NAME.charAt(0).toUpperCase();
+
   const data = await fetchRessources();
   renderCards(data);
-  document.getElementById("statTotal").textContent = data.length;
+  const statTotal = document.getElementById("statTotal");
+  if (statTotal) statTotal.textContent = data.length;
 })();
+
+// Logout logic with confirmation
+document.getElementById("btnDeconnexion").addEventListener("click", () => {
+  openModal("Déconnexion", `
+    <p style="margin-bottom:16px">Êtes-vous sûr de vouloir vous déconnecter ?</p>
+    <button class="btn-save" style="background:var(--accent-red)" id="confirmLogout">Confirmer la déconnexion</button>
+  `);
+  
+  document.getElementById("confirmLogout").addEventListener("click", () => {
+    localStorage.removeItem('userSession');
+    window.location.href = "index.html";
+  });
+});
 
