@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculté | Espace Étudiant</title>
+    <link rel="stylesheet" href="styleLog.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="glass-card">
+        <div class="logo">
+            <div class="icon-cap">🎓</div>
+            <h1>Faculté<span>Digital</span></h1>
+        </div>
+
+        <div id="login-box" class="auth-form active">
+            <h3>Bon retour !</h3>
+            <p class="subtitle">Connectez-vous pour accéder à vos cours.</p>
+            <form action="auth.php" method="POST">
+                <input type="hidden" name="action" value="login">
+                <div class="input-group">
+                    <input type="email" name="email" placeholder="Gmail académique" required>
+                </div>
+                <div class="input-group">
+                    <input type="password" name="password" placeholder="Mot de passe" required>
+                </div>
+                <button type="submit" class="btn-primary">Se connecter</button>
+            </form>
+            <div class="footer-links">
+                <a href="#" onclick="showBox('forgot-box')">Mot de passe oublié ?</a>
+                <span>•</span>
+                <a href="#" onclick="showBox('register-box')">Créer un compte</a>
+            </div>
+        </div>
+
+        <div id="register-box" class="auth-form">
+            <h3>Rejoindre la communauté</h3>
+            <form action="auth.php" method="POST">
+                <input type="hidden" name="action" value="register">
+                <div class="row">
+                    <input type="text" name="prenom" placeholder="Prénom" required>
+                    <input type="text" name="nom" placeholder="Nom" required>
+                </div>
+                <input type="email" name="email" placeholder="Gmail" required>
+                <input type="password" name="password" placeholder="Choisir un mot de passe" required>
+                
+                <div class="select-wrapper">
+                    <select name="user_type" id="user_type" onchange="toggleCodeField()">
+                        <option value="interne">Étudiant / Professeur (Interne)</option>
+                        <option value="etranger">Auditeur Libre (Abonnement Mensuel)</option>
+                    </select>
+                </div>
+                
+                <input type="number" name="code" id="code_field" placeholder="Code d'accès (7 chiffres)" class="highlight-input">
+                
+                <div id="pay-notice" class="pay-info">
+                    ✨ Mode Premium : Accès illimité
+                </div>
+
+                <button type="submit" class="btn-primary">S'inscrire maintenant</button>
+            </form>
+            <div class="footer-links">
+                <a href="#" onclick="showBox('login-box')">Déjà inscrit ? Connexion</a>
+            </div>
+        </div>
+
+        <div id="forgot-box" class="auth-form">
+            <h3>Récupération</h3>
+            <p class="subtitle">Entrez votre Gmail pour réinitialiser.</p>
+            <form action="auth.php" method="POST">
+                <input type="hidden" name="action" value="reset">
+                <input type="email" name="email" placeholder="Votre Gmail" required>
+                <input type="password" name="new_password" placeholder="Nouveau mot de passe" required>
+                <button type="submit" class="btn-primary">Mettre à jour</button>
+            </form>
+            <a href="#" class="back-link" onclick="showBox('login-box')">← Retour</a>
+        </div>
+    </div>
+    <div id="payment-modal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closePayment()">&times;</span>
+        <h4>💳 Paiement Sécurisé</h4>
+        <p class="price-tag">Abonnement Mensuel : 9.99€</p>
+        
+        <div id="card-wrapper">
+            <div class="input-group">
+                <label>Numéro de Carte</label>
+                <input type="text" id="card_num" placeholder="0000 0000 0000 0000" maxlength="19">
+            </div>
+            <div class="row">
+                <div class="col">
+                    <label>Expiration</label>
+                    <input type="text" id="card_exp" placeholder="MM/YY" maxlength="5">
+                </div>
+                <div class="col">
+                    <label>CVC</label>
+                    <input type="text" id="card_cvc" placeholder="123" maxlength="3">
+                </div>
+            </div>
+            <button type="button" class="btn-pay" onclick="processPayment()">Confirmer le paiement</button>
+            <p id="pay-status"></p>
+        </div>
+    </div>
+</div>
+
+    <script src="scriptLog.js"></script>
+</body>
+</html>
