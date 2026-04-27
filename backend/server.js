@@ -102,6 +102,30 @@ app.post("/api/auth/register", async (req, res) => {
       });
     }
 
+    // 1. Validation du code d'activation (pour internes)
+    if (type === "etudiant_interne" || type === "professeur_interne") {
+      if (!codeActivation) {
+        return res.status(400).json({ success: false, error: "Code d'activation requis" });
+      }
+
+      const expectedType = type === "etudiant_interne" ? "etudiant" : "prof";
+      
+      const { data: codeData, error: codeError } = await supabase
+        .from("codes_academiques")
+        .select("*")
+        .eq("code_valide", codeActivation)
+        .eq("type_code", expectedType)
+        .eq("est_utilise", false)
+        .single();
+
+      if (codeError || !codeData) {
+        return res.status(400).json({
+          success: false,
+          error: "Code d'activation invalide, déjà utilisé ou type incorrect"
+        });
+      }
+    }
+
     // Vérifier si l'utilisateur existe déjà
     const { data: existingUser } = await supabase
       .from("users")
@@ -138,6 +162,12 @@ app.post("/api/auth/register", async (req, res) => {
 
     // ========== ÉTUDIANT / PROFESSEUR INTERNE ==========
     if (type === "etudiant_interne" || type === "professeur_interne") {
+      // Marquer le code comme utilisé
+      await supabase
+        .from("codes_academiques")
+        .update({ est_utilise: true })
+        .eq("code_valide", codeActivation);
+
       await supabase.from("users").insert({
         id: authUser.user.id,
         email,
