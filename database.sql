@@ -7,6 +7,7 @@ USE faculte_db;
 CREATE TABLE codes_academiques (
     id INT AUTO_INCREMENT PRIMARY KEY,
     code_valide INT(7) UNIQUE NOT NULL,
+    type_code ENUM('etudiant', 'prof') DEFAULT 'etudiant', -- Nouveau: Distinction entre prof et étudiant
     est_utilise BOOLEAN DEFAULT FALSE,
     date_generation TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -25,8 +26,11 @@ CREATE TABLE utilisateurs (
     -- Référence au code d'inscription (si interne)
     code_inscription_utilise INT(7) NULL,
     
-    -- Statut du compte: 'actif', 'suspendu' (si non payé), 'en_attente'
+    -- Statut du compte: 'actif', 'suspendu', 'en_attente'
     statut_compte VARCHAR(20) DEFAULT 'actif',
+    
+    -- Nouveau: Rôle de l'utilisateur (déterminé par le code lors de l'inscription)
+    role ENUM('etudiant', 'prof') DEFAULT 'etudiant',
     
     date_inscription TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
@@ -52,11 +56,12 @@ CREATE TABLE abonnements_payants (
 -- ---------------------------------------------------------
 
 -- Insertion de quelques codes d'inscription à 7 chiffres valides
-INSERT INTO codes_academiques (code_valide) VALUES 
-(1234567), 
-(7654321), 
-(1112223), 
-(9988776);
+-- Insertion de quelques codes d'inscription valides
+INSERT INTO codes_academiques (code_valide, type_code) VALUES 
+(1234567, 'etudiant'), -- Code pour un étudiant
+(7654321, 'etudiant'), 
+(9999001, 'prof'),     -- Code pour un professeur
+(9999002, 'prof');
 
 -- 5. Table des Ressources (Cours, Examens, etc.)
 CREATE TABLE ressources (

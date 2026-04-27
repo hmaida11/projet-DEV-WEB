@@ -598,6 +598,12 @@ document.getElementById("modalOverlay").addEventListener("click", e => {
   const avatarSpan = document.querySelector(".topbar-avatar span");
   if (avatarSpan) avatarSpan.textContent = USER_NAME.charAt(0).toUpperCase();
 
+  // Nouveau: Masquer le bouton Émettre pour les étudiants
+  const btnEmettre = document.getElementById("btnEmettre");
+  if (userSession && userSession.role !== 'prof') {
+    if (btnEmettre) btnEmettre.style.display = 'none';
+  }
+
   const data = await fetchRessources();
   renderCards(data);
   const statTotal = document.getElementById("statTotal");
