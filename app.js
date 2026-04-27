@@ -10,7 +10,7 @@ const userSession = JSON.parse(localStorage.getItem('userSession'));
 
 if (!userSession) {
   // Redirection si l'utilisateur n'est pas connecté
-  window.location.href = "index.html";
+  window.location.href = "frontend/login.html";
 }
 
 const USER_ID = userSession ? userSession.id : null;
@@ -730,7 +730,7 @@ document.getElementById("btnDeconnexion").addEventListener("click", () => {
   `);
   document.getElementById("confirmLogout").addEventListener("click", () => {
     localStorage.removeItem('userSession');
-    window.location.href = "index.html";
+    window.location.href = "frontend/login.html";
   });
 });
 
