@@ -330,6 +330,107 @@ app.post("/api/payment/confirm", async (req, res) => {
   }
 });
 
+// 5. Route de récupération de mot de passe
+app.post("/api/auth/forgot-password", async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        error: "Email requis",
+      });
+    }
+
+    // On vérifie d'abord si l'utilisateur existe dans notre table users
+    const { data: user, error: userError } = await supabase
+      .from("users")
+      .select("email")
+      .eq("email", email)
+      .single();
+
+    if (userError || !user) {
+      return res.status(404).json({
+        success: false,
+        error: "Aucun compte associé à cet email",
+      });
+    }
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: "http://localhost:5500/frontend/reset-password.html",
+    });
+
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        error: error.message,
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Lien de récupération envoyé par email",
+    });
+  } catch (error) {
+    console.error("Erreur récupération:", error);
+    res.status(500).json({
+      success: false,
+      error: "Erreur serveur",
+    });
+  }
+});
+
+// 6. Route de réinitialisation finale du mot de passe
+app.post("/api/auth/reset-password", async (req, res) => {
+  try {
+    const { password, email } = req.body;
+
+    if (!password || !email) {
+      return res.status(400).json({
+        success: false,
+        error: "Email et nouveau mot de passe requis",
+      });
+    }
+
+    // Récupérer l'ID de l'utilisateur par son email
+    const { data: user, error: userError } = await supabase
+      .from("users")
+      .select("id")
+      .eq("email", email)
+      .single();
+
+    if (userError || !user) {
+      return res.status(404).json({
+        success: false,
+        error: "Utilisateur non trouvé",
+      });
+    }
+
+    // Mettre à jour le mot de passe via l'admin API (plus simple pour ce flux)
+    const { error } = await supabase.auth.admin.updateUserById(user.id, {
+      password: password,
+    });
+
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        error: error.message,
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Mot de passe réinitialisé avec succès",
+    });
+  } catch (error) {
+    console.error("Erreur reset password:", error);
+    res.status(500).json({
+      success: false,
+      error: "Erreur serveur",
+    });
+  }
+});
+
 // Démarrer le serveur
 app.listen(PORT, () => {
   console.log(`🚀 Serveur démarré sur http://localhost:${PORT}`);
