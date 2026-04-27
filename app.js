@@ -194,10 +194,20 @@ function renderResults(data, title = "Résultats") {
   const list = document.getElementById("resultsList");
   const titleEl = document.getElementById("resultsTitle");
 
+  // Show the panel
+  panel.style.display = "block";
+  panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
   titleEl.textContent = `${title} — ${data.length} trouvé${data.length > 1 ? "s" : ""}`;
 
   if (data.length === 0) {
-    list.innerHTML = `<li class="no-results">Aucune ressource trouvée pour ces critères.</li>`;
+    list.innerHTML = `
+      <li class="no-results">
+        <div style="font-size: 2rem; margin-bottom: 10px;">🔍</div>
+        <strong>Aucune ressource trouvée</strong><br>
+        <span style="font-size: 0.8rem; opacity: 0.7;">Désolé, nous n'avons trouvé aucun document correspondant à votre recherche.</span>
+      </li>
+    `;
   } else {
     list.innerHTML = data.map((r, i) => `
       <li class="result-item" style="animation-delay:${i * 0.04}s">
@@ -302,8 +312,8 @@ async function doSearch() {
     if (state.historique.length > 20) state.historique.pop();
   }
 
+  renderResults(data, q ? `Recherche: ${q}` : `Catégorie : ${cat}`);
   renderCards(data);
-  renderResults(data, q ? `"${q}"` : `Catégorie : ${cat}`);
 }
 
 /* ════════════════════════════════════════════════
@@ -707,8 +717,6 @@ document.getElementById("modalOverlay").addEventListener("click", e => {
 
     const data = await fetchRessources();
     renderCards(data);
-    const statTotal = document.getElementById("statTotal");
-    if (statTotal) statTotal.textContent = data.length;
   } catch (err) {
     console.error("Initialization error:", err);
   }
@@ -762,3 +770,78 @@ function setupProfileToggle() {
 
 // Call setup
 setupProfileToggle();
+
+/* ═══════════════════════════════════════════════════
+   NOTIFICATIONS LOGIC
+════════════════════════════════════════════════════ */
+function setupNotifications() {
+  const notifBtn = document.getElementById("notifBtn");
+  const notifDropdown = document.getElementById("notifDropdown");
+  const notifList = document.getElementById("notifList");
+  const notifBadge = document.getElementById("notifBadge");
+  const clearBtn = document.getElementById("clearNotifs");
+
+  if (!notifBtn) return;
+
+  notifBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    notifDropdown.classList.toggle("open");
+    notifBadge.style.display = "none";
+  });
+
+  document.addEventListener("click", () => notifDropdown.classList.remove("open"));
+  notifDropdown.addEventListener("click", (e) => e.stopPropagation());
+
+  if (clearBtn) {
+    clearBtn.addEventListener("click", () => {
+      notifList.innerHTML = `<div class="notif-empty">Aucune nouvelle notification</div>`;
+      notifBadge.style.display = "none";
+    });
+  }
+
+  // Polling for new notifications every 30 seconds
+  setInterval(checkNewResources, 30000);
+  checkNewResources(); // Initial check
+}
+
+async function checkNewResources() {
+  try {
+    const data = await fetchRessources();
+    if (!data || data.length === 0) return;
+
+    const lastNotifId = parseInt(localStorage.getItem("lastNotifId") || 0);
+    const newItems = data.filter(r => r.id > lastNotifId);
+
+    if (newItems.length > 0) {
+      const notifList = document.getElementById("notifList");
+      const notifBadge = document.getElementById("notifBadge");
+
+      notifBadge.style.display = "block";
+      
+      const html = newItems.slice(0, 5).map(r => {
+        const date = new Date(r.date_creation).toLocaleString('fr-FR', {
+          day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
+        });
+        return `
+          <div class="notif-item">
+            <div class="notif-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V9z"></path><polyline points="13 2 13 9 20 9"></polyline></svg>
+            </div>
+            <div class="notif-content">
+              <div class="notif-title">${r.titre}</div>
+              <div class="notif-desc">Nouveau <strong>${r.type_ressource}</strong> ajouté en <strong>${r.section}</strong> (${r.niveau})</div>
+              <div class="notif-time">${date}</div>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      notifList.innerHTML = html;
+      localStorage.setItem("lastNotifId", data[0].id); // Store latest ID
+    }
+  } catch (err) {
+    console.error("Notif check failed:", err);
+  }
+}
+
+setupNotifications();
