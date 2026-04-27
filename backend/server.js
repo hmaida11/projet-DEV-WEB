@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
+import multer from "multer";
 
 import path from "path";
 import { fileURLToPath } from "url";
@@ -26,6 +27,9 @@ const supabase = createClient(
 
 console.log("SUPABASE_URL:", process.env.SUPABASE_URL);
 console.log("SERVICE_ROLE_KEY existe:", !!process.env.SUPABASE_SERVICE_ROLE_KEY);
+
+// Configuration Multer (stockage en mémoire pour upload vers Supabase)
+const upload = multer({ storage: multer.memoryStorage() });
 
 // ============ ROUTES API ============
 
@@ -223,6 +227,100 @@ app.post("/api/auth/register", async (req, res) => {
     });
   }
 });
+
+// ============ ROUTES RESSOURCES ============
+
+// 3. Récupérer les ressources (avec filtres)
+app.get("/api/ressources", async (req, res) => {
+  try {
+    const { q, section, niveau, categorie } = req.query;
+
+    let query = supabase.from("ressources").select("*");
+
+    if (section && section !== "Tous") query = query.eq("section", section);
+    if (niveau) query = query.eq("niveau", niveau);
+    if (categorie && categorie !== "Tous") {
+      const typeMap = {
+        "Séries d'exercices": "exercices",
+        "Sujets d'Examens": "examens",
+        "Cours & Supports": "cours",
+        "Travaux Dirigés": "td",
+      };
+      const t = typeMap[categorie];
+      if (t) query = query.eq("type_ressource", t);
+    }
+    if (q) query = query.ilike("titre", `%${q}%`);
+
+    const { data, error } = await query.order("date_creation", { ascending: false });
+
+    if (error) throw error;
+
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error("Erreur fetch ressources:", error);
+    res.status(500).json({ success: false, error: "Erreur serveur" });
+  }
+});
+
+// 4. Ajouter une ressource (Upload réel)
+app.post("/api/ressources", upload.single("fichier"), async (req, res) => {
+  try {
+    const { titre, type, section, niveau, annee, userId } = req.body;
+    const file = req.file;
+
+    if (!titre || !type || !section || !niveau || !annee || !file) {
+      return res.status(400).json({
+        success: false,
+        error: "Tous les champs et le fichier sont requis",
+      });
+    }
+
+    const fileName = `${Date.now()}_${file.originalname}`;
+    const filePath = `uploads/${fileName}`;
+
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from("ressources")
+      .upload(filePath, file.buffer, {
+        contentType: file.mimetype,
+        upsert: false,
+      });
+
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from("ressources")
+      .getPublicUrl(filePath);
+
+    const { data: dbData, error: dbError } = await supabase
+      .from("ressources")
+      .insert({
+        titre,
+        type_ressource: type,
+        section,
+        niveau,
+        annee_universitaire: annee,
+        url_fichier: publicUrl,
+        user_id: userId,
+      })
+      .select()
+      .single();
+
+    if (dbError) throw dbError;
+
+    res.json({
+      success: true,
+      message: "Ressource ajoutée avec succès",
+      data: dbData,
+    });
+  } catch (error) {
+    console.error("Erreur upload ressource:", error);
+    res.status(500).json({
+      success: false,
+      error: "Erreur serveur: " + error.message,
+    });
+  }
+});
+
 
 // ========== ROUTE PAIEMENT (VRAIE INTÉGRATION KONNECT) ==========
 app.post("/api/payment/init", async (req, res) => {

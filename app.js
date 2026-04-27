@@ -165,14 +165,19 @@ function renderResults(data, title = "Résultats") {
           <div class="result-titre">${r.titre}</div>
           <div class="result-meta">${r.section} · ${r.niveau}</div>
         </div>
-        <button class="result-download" data-id="${r.id}" data-titre="${r.titre}">
-          ↓ Installer
-        </button>
+        <div class="result-actions" style="display:flex; gap:8px;">
+          <a href="${r.url_fichier}" target="_blank" class="result-download" style="text-decoration:none; background:var(--blue-vivid); color:white;">
+            👁 Voir
+          </a>
+          <button class="result-download btn-install" data-id="${r.id}" data-titre="${r.titre}">
+            ↓ Installer
+          </button>
+        </div>
       </li>
     `).join("");
 
     // Bind download buttons
-    list.querySelectorAll(".result-download").forEach(btn => {
+    list.querySelectorAll(".btn-install").forEach(btn => {
       btn.addEventListener("click", async () => {
         const id = parseInt(btn.dataset.id);
         const titre = btn.dataset.titre;
@@ -575,18 +580,18 @@ emSubmit.addEventListener("click", async () => {
   emSubmit.textContent = "Envoi...";
 
   try {
+    const formData = new FormData();
+    formData.append("titre", titre);
+    formData.append("type", type);
+    formData.append("section", section);
+    formData.append("niveau", niveau);
+    formData.append("annee", annee);
+    formData.append("userId", USER_ID);
+    formData.append("fichier", file);
+
     const response = await fetch(`${API}/ressources`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        titre,
-        type,
-        section,
-        niveau,
-        annee,
-        userId: USER_ID,
-        url_fichier: file ? `fichiers/${file.name}` : null
-      })
+      body: formData
     });
 
     const result = await response.json();
