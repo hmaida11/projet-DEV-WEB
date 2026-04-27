@@ -15,9 +15,10 @@ CREATE TABLE codes_academiques (
 -- 3. Table des utilisateurs
 CREATE TABLE utilisateurs (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    prenom VARCHAR(50) NOT NULL,
-    nom VARCHAR(50) NOT NULL,
-    email VARCHAR(100) NOT NULL UNIQUE,
+    prenom VARCHAR(100) NOT NULL,
+    nom VARCHAR(100) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    email2 VARCHAR(255), -- البريد الإلكتروني الثاني الاختياري
     password VARCHAR(255) NOT NULL, -- Stocké en hash (password_hash)
     
     -- Type: 'interne' (gratuit) ou 'etranger' (payant)
@@ -27,7 +28,11 @@ CREATE TABLE utilisateurs (
     code_inscription_utilise INT(7) NULL,
     
     -- Statut du compte: 'actif', 'suspendu', 'en_attente'
-    statut_compte VARCHAR(20) DEFAULT 'actif',
+    statut ENUM('actif', 'suspendu', 'en_attente') DEFAULT 'actif',
+    
+    avatar_url TEXT, -- رابط الصورة الشخصية
+    niveau VARCHAR(100), -- سنة الدراسة
+    section VARCHAR(100), -- الشعبة
     
     -- Nouveau: Rôle de l'utilisateur (déterminé par le code lors de l'inscription)
     role ENUM('etudiant', 'prof') DEFAULT 'etudiant',

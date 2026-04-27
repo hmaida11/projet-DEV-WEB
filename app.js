@@ -395,6 +395,27 @@ document.getElementById("btnProfil").addEventListener("click", async () => {
     </div>
   `);
 
+  // Upload logic for avatar (Moved here so it works immediately)
+  const btnUpload = document.getElementById("btnUploadAvatar");
+  const fileInput = document.getElementById("fileAvatarInput");
+  const avatarField = document.getElementById("fAvatar");
+
+  if (btnUpload && fileInput) {
+    btnUpload.addEventListener("click", () => fileInput.click());
+
+    fileInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          avatarField.value = event.target.result; // Base64 string
+          showToast("Image chargée avec succès !");
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  }
+
   document.getElementById("saveProfil").addEventListener("click", async () => {
     console.log("Click on save profile...");
     const fullNom = document.getElementById("fNom").value.trim();
@@ -412,25 +433,6 @@ document.getElementById("btnProfil").addEventListener("click", async () => {
     };
 
     console.log("Data to send:", body);
-
-    // Upload logic for avatar
-    const btnUpload = document.getElementById("btnUploadAvatar");
-    const fileInput = document.getElementById("fileAvatarInput");
-    const avatarField = document.getElementById("fAvatar");
-
-    btnUpload.addEventListener("click", () => fileInput.click());
-
-    fileInput.addEventListener("change", (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          avatarField.value = event.target.result; // Base64 string
-          showToast("Image chargée avec succès !");
-        };
-        reader.readAsDataURL(file);
-      }
-    });
 
     try {
       const res = await fetch(`${API}/users/${USER_ID}/profil`, {
