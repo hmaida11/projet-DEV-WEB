@@ -183,7 +183,7 @@ app.get("/api/users/:id/profil", async (req, res) => {
     res.json({ success: true, data });
 });
 
-// UPDATE PROFIL (جديد)
+// UPDATE PROFIL
 app.put("/api/users/:id/profil", async (req, res) => {
     const { prenom, nom, email, niveau, section } = req.body;
     try {
@@ -194,10 +194,13 @@ app.put("/api/users/:id/profil", async (req, res) => {
             .select()
             .single();
 
-        if (error) throw error;
+        if (error) {
+            console.error("Supabase Error:", error);
+            return res.status(400).json({ success: false, message: error.message });
+        }
         res.json({ success: true, data });
     } catch (err) {
-        res.status(500).json({ success: false, message: "Erreur lors de la mise à jour du profil." });
+        res.status(500).json({ success: false, message: "Erreur serveur lors de la mise à jour." });
     }
 });
 

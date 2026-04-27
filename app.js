@@ -381,6 +381,7 @@ document.getElementById("btnProfil").addEventListener("click", async () => {
   `);
 
   document.getElementById("saveProfil").addEventListener("click", async () => {
+    console.log("Click on save profile...");
     const fullNom = document.getElementById("fNom").value.trim();
     const [prenom, ...nomParts] = fullNom.split(" ");
     const nom = nomParts.join(" ");
@@ -393,21 +394,27 @@ document.getElementById("btnProfil").addEventListener("click", async () => {
       section: document.getElementById("fSection").value,
     };
 
+    console.log("Data to send:", body);
+
     try {
       const res = await fetch(`${API}/users/${USER_ID}/profil`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
+      
       const result = await res.json();
+      console.log("Server response:", result);
+
       if (result.success) {
         showToast("Profil mis à jour avec succès !");
-        closeModal();
-        // Optionnel: rafraîchir pour appliquer les nouveaux filtres
-        location.reload();
+        setTimeout(() => location.reload(), 800);
+      } else {
+        showToast("Erreur : " + (result.message || "Impossible de sauvegarder"));
       }
-    } catch {
-      showToast("Erreur lors de l'enregistrement.");
+    } catch (err) {
+      console.error("Connection error:", err);
+      showToast("Erreur de connexion au serveur.");
     }
   });
 });
@@ -633,12 +640,11 @@ document.getElementById("modalOverlay").addEventListener("click", e => {
     if (btnEmettre) btnEmettre.style.display = 'none';
   }
 
-  // ميزة جديدة: تطبيق الفلاتر التلقائية بناءً على بروفايل الطالب
+  // Automatic filters based on profile
   const profil = await fetchProfil();
   if (profil && profil.role === 'etudiant') {
     if (profil.section) {
       state.activeSection = profil.section;
-      // تحديث مظهر القائمة الجانبية
       document.querySelectorAll(".nav-item[data-filter='section']").forEach(el => {
         el.classList.toggle("active", el.dataset.value === profil.section);
       });
