@@ -342,11 +342,14 @@ document.getElementById("closeResults").addEventListener("click", () => {
 // Réglages du Profil
 document.getElementById("btnProfil").addEventListener("click", async () => {
   const profil = await fetchProfil();
+  // On combine prenom et nom pour l'affichage
+  const fullNom = `${profil.prenom || ""} ${profil.nom || ""}`.trim();
+
   openModal("Réglages du Profil", `
     <div class="modal-form">
       <div class="form-group">
         <label class="form-label">Nom complet</label>
-        <input class="form-input" id="fNom" value="${profil.nom}" />
+        <input class="form-input" id="fNom" value="${fullNom}" />
       </div>
       <div class="form-group">
         <label class="form-label">Adresse email</label>
@@ -354,32 +357,58 @@ document.getElementById("btnProfil").addEventListener("click", async () => {
       </div>
       <div class="form-group">
         <label class="form-label">Niveau</label>
-        <input class="form-input" id="fNiveau" value="${profil.niveau || ''}" />
+        <select class="form-input" id="fNiveau">
+          <option value="">Choisir...</option>
+          <option ${profil.niveau === 'Licence 1' ? 'selected' : ''}>Licence 1</option>
+          <option ${profil.niveau === 'Licence 2' ? 'selected' : ''}>Licence 2</option>
+          <option ${profil.niveau === 'Licence 3' ? 'selected' : ''}>Licence 3</option>
+          <option ${profil.niveau === 'Master' ? 'selected' : ''}>Master</option>
+          <option ${profil.niveau === 'Doctorat' ? 'selected' : ''}>Doctorat</option>
+        </select>
       </div>
       <div class="form-group">
         <label class="form-label">Section</label>
-        <input class="form-input" id="fSection" value="${profil.section || ''}" />
+        <select class="form-input" id="fSection">
+          <option value="">Choisir...</option>
+          <option ${profil.section === 'Informatique' ? 'selected' : ''}>Informatique</option>
+          <option ${profil.section === 'Mathématiques' ? 'selected' : ''}>Mathématiques</option>
+          <option ${profil.section === 'EEA' ? 'selected' : ''}>EEA</option>
+          <option ${profil.section === 'TIC' ? 'selected' : ''}>TIC</option>
+        </select>
       </div>
       <button class="btn-save" id="saveProfil">Enregistrer les modifications</button>
     </div>
   `);
 
   document.getElementById("saveProfil").addEventListener("click", async () => {
+    const fullNom = document.getElementById("fNom").value.trim();
+    const [prenom, ...nomParts] = fullNom.split(" ");
+    const nom = nomParts.join(" ");
+
     const body = {
-      nom:     document.getElementById("fNom").value,
+      prenom:  prenom || "",
+      nom:     nom || "",
       email:   document.getElementById("fEmail").value,
       niveau:  document.getElementById("fNiveau").value,
       section: document.getElementById("fSection").value,
     };
+
     try {
-      await fetch(`${API}/users/${USER_ID}/profil`, {
+      const res = await fetch(`${API}/users/${USER_ID}/profil`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-    } catch {}
-    closeModal();
-    showToast("Profil mis à jour avec succès !");
+      const result = await res.json();
+      if (result.success) {
+        showToast("Profil mis à jour avec succès !");
+        closeModal();
+        // Optionnel: rafraîchir pour appliquer les nouveaux filtres
+        location.reload();
+      }
+    } catch {
+      showToast("Erreur lors de l'enregistrement.");
+    }
   });
 });
 
@@ -602,6 +631,24 @@ document.getElementById("modalOverlay").addEventListener("click", e => {
   const btnEmettre = document.getElementById("btnEmettre");
   if (userSession && userSession.role !== 'prof') {
     if (btnEmettre) btnEmettre.style.display = 'none';
+  }
+
+  // ميزة جديدة: تطبيق الفلاتر التلقائية بناءً على بروفايل الطالب
+  const profil = await fetchProfil();
+  if (profil && profil.role === 'etudiant') {
+    if (profil.section) {
+      state.activeSection = profil.section;
+      // تحديث مظهر القائمة الجانبية
+      document.querySelectorAll(".nav-item[data-filter='section']").forEach(el => {
+        el.classList.toggle("active", el.dataset.value === profil.section);
+      });
+    }
+    if (profil.niveau) {
+      state.activeNiveau = profil.niveau;
+      document.querySelectorAll(".nav-item[data-filter='niveau']").forEach(el => {
+        el.classList.toggle("active", el.dataset.value === profil.niveau);
+      });
+    }
   }
 
   const data = await fetchRessources();

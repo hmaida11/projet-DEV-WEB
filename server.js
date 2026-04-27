@@ -183,6 +183,24 @@ app.get("/api/users/:id/profil", async (req, res) => {
     res.json({ success: true, data });
 });
 
+// UPDATE PROFIL (جديد)
+app.put("/api/users/:id/profil", async (req, res) => {
+    const { prenom, nom, email, niveau, section } = req.body;
+    try {
+        const { data, error } = await supabase
+            .from('utilisateurs')
+            .update({ prenom, nom, email, niveau, section })
+            .eq('id', req.params.id)
+            .select()
+            .single();
+
+        if (error) throw error;
+        res.json({ success: true, data });
+    } catch (err) {
+        res.status(500).json({ success: false, message: "Erreur lors de la mise à jour du profil." });
+    }
+});
+
 // --- ROUTES RESSOURCES ---
 
 // 1. Lister les ressources (avec filtres)
