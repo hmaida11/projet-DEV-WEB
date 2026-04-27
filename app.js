@@ -557,9 +557,11 @@ const emFilename = document.getElementById("em-filename");
 const emSubmit   = document.getElementById("emettreSubmit");
 
 // Ouvrir
-btnEmettre.addEventListener("click", () => {
-  emOverlay.classList.add("open");
-});
+if (btnEmettre) {
+  btnEmettre.addEventListener("click", () => {
+    emOverlay.classList.add("open");
+  });
+}
 
 // Fermer
 [emClose, emCancel].forEach(btn => {
@@ -711,9 +713,15 @@ document.getElementById("modalOverlay").addEventListener("click", e => {
       }
     }
 
-    // Show Émettre button for everyone as requested
+    // Show Émettre button only for professors
     const btnEmettre = document.getElementById("btnEmettre");
-    if (btnEmettre) btnEmettre.style.display = 'flex';
+    if (btnEmettre) {
+      if (userSession && userSession.type === 'professeur_interne') {
+        btnEmettre.style.display = 'flex';
+      } else {
+        btnEmettre.style.display = 'none';
+      }
+    }
 
     const data = await fetchRessources();
     renderCards(data);
