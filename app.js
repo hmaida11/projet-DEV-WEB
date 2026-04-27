@@ -13,8 +13,8 @@ if (!userSession) {
   window.location.href = "index.html";
 }
 
-const USER_ID = userSession.id;
-const USER_NAME = userSession.prenom || "Étudiant";
+const USER_ID = userSession ? userSession.id : null;
+const USER_NAME = userSession ? (userSession.prenom || "Étudiant") : "Invité";
 
 /* ── Données locales de fallback (si backend éteint) ── */
 const LOCAL_DATA = [
@@ -496,7 +496,7 @@ emFileInput.addEventListener("change", (e) => {
 
 emDropZone.addEventListener("dragover", (e) => {
   e.preventDefault();
-  emDropZone.style.borderColor = "var(--primary)";
+  emDropZone.style.borderColor = "var(--blue-vivid)";
   emDropZone.style.background = "#f0f7ff";
 });
 
@@ -535,25 +535,51 @@ emSubmit.addEventListener("click", async () => {
     return;
   }
 
-  // Simulation d'envoi
+  // Envoi réel au backend
   emSubmit.disabled = true;
   emSubmit.textContent = "Envoi...";
 
-  setTimeout(() => {
-    showToast(`Ressource "${titre}" (${annee}) ajoutée avec succès !`);
+  try {
+    const response = await fetch(`${API}/ressources`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        titre,
+        type,
+        section,
+        niveau,
+        annee,
+        userId: USER_ID,
+        url_fichier: file ? `fichiers/${file.name}` : null
+      })
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      showToast(`Ressource "${titre}" (${annee}) ajoutée avec succès !`);
+      emOverlay.classList.remove("open");
+      
+      // Réinitialisation du formulaire
+      document.getElementById("em-titre").value = "";
+      document.getElementById("em-type").value = "";
+      document.getElementById("em-section").value = "";
+      document.getElementById("em-niveau").value = "";
+      document.getElementById("em-annee").value = "";
+      emFileInput.value = "";
+      emFilename.textContent = "";
+
+      // Rafraîchir les cartes
+      refresh();
+    } else {
+      showToast("Erreur lors de l'ajout : " + result.message);
+    }
+  } catch (err) {
+    showToast("Erreur de connexion au serveur.");
+  } finally {
     emSubmit.disabled = false;
     emSubmit.textContent = "Ajouter";
-    emOverlay.classList.remove("open");
-    
-    // Réinitialisation du formulaire
-    document.getElementById("em-titre").value = "";
-    document.getElementById("em-type").value = "";
-    document.getElementById("em-section").value = "";
-    document.getElementById("em-niveau").value = "";
-    document.getElementById("em-annee").value = "";
-    emFileInput.value = "";
-    emFilename.textContent = "";
-  }, 1500);
+  }
 });
 
 /* ════════════════════════════════════════════════

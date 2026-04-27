@@ -176,6 +176,58 @@ app.get("/api/users/:id/profil", async (req, res) => {
     res.json({ success: true, data });
 });
 
+// --- ROUTES RESSOURCES ---
+
+// 1. Lister les ressources (avec filtres)
+app.get("/api/ressources", async (req, res) => {
+    const { q, section, niveau, categorie } = req.query;
+    let query = supabase.from('ressources').select('*');
+
+    if (q) query = query.ilike('titre', `%${q}%`);
+    if (section) query = query.eq('section', section);
+    if (niveau) query = query.eq('niveau', niveau);
+    if (categorie) {
+        const typeMap = {
+            "Séries d'exercices": "exercices",
+            "Sujets d'Examens":   "examens",
+            "Cours & Supports":   "cours",
+            "Travaux Dirigés":    "td",
+        };
+        const type = typeMap[categorie];
+        if (type) query = query.eq('type_ressource', type);
+    }
+
+    try {
+        const { data, error } = await query.order('date_creation', { ascending: false });
+        if (error) throw error;
+        res.json({ success: true, data });
+    } catch (err) {
+        res.status(500).json({ success: false, message: "Erreur lors de la récupération des ressources." });
+    }
+});
+
+// 2. Ajouter une ressource
+app.post("/api/ressources", async (req, res) => {
+    const { titre, type, section, niveau, annee, userId, url_fichier } = req.body;
+    
+    try {
+        const { data, error } = await supabase.from('ressources').insert([{
+            titre,
+            type_ressource: type,
+            section,
+            niveau,
+            annee_universitaire: annee,
+            user_id: userId,
+            url_fichier: url_fichier || "https://example.com/file.pdf"
+        }]).select().single();
+
+        if (error) throw error;
+        res.status(201).json({ success: true, data });
+    } catch (err) {
+        res.status(500).json({ success: false, message: "Erreur lors de l'ajout de la ressource." });
+    }
+});
+
 // --- 5. DÉMARRAGE ---
 async function testdb() {
     try {

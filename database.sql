@@ -58,5 +58,20 @@ INSERT INTO codes_academiques (code_valide) VALUES
 (1112223), 
 (9988776);
 
+-- 5. Table des Ressources (Cours, Examens, etc.)
+CREATE TABLE ressources (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    titre VARCHAR(255) NOT NULL,
+    type_ressource ENUM('exercices', 'examens', 'cours', 'td') NOT NULL,
+    section VARCHAR(100) NOT NULL,
+    niveau VARCHAR(100) NOT NULL,
+    annee_universitaire VARCHAR(20) NOT NULL,
+    url_fichier TEXT, -- Lien vers le fichier (Supabase Storage ou local)
+    user_id INT, -- L'utilisateur qui a posté
+    date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (user_id) REFERENCES utilisateurs(id) ON DELETE SET NULL
+);
+
 -- Note : Lors de l'inscription d'un élève avec le code 1234567, 
--- vous devrez mettre à jour 'est_utilise' à TRUE en PHP.
+-- vous devrez mettre à jour 'est_utilise' à TRUE.
