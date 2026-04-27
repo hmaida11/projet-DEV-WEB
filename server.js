@@ -1,269 +1,331 @@
 import express from "express";
 import cors from "cors";
-import helmet from "helmet";
-import rateLimit from "express-rate-limit";
-import bcrypt from "bcrypt";
-import supabase from "./database.js";
+import dotenv from "dotenv";
+import { createClient } from "@supabase/supabase-js";
+import crypto from "crypto";
+
+dotenv.config();
 
 const app = express();
+const PORT = process.env.PORT || 3000;
 
-// --- 1. CONFIGURATION DE SÉCURITÉ ---
-app.use(helmet()); 
-app.use(cors());
+// Middleware
+app.use(cors({ origin: "*", credentials: true }));
 app.use(express.json());
 
-// Limiteur pour éviter les attaques par force brute sur l'auth
-const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 50,
-    message: { success: false, message: "Trop de tentatives. Réessayez plus tard." }
+// Connexion Supabase
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
+console.log("SUPABASE_URL:", process.env.SUPABASE_URL);
+console.log("SERVICE_ROLE_KEY existe:", !!process.env.SUPABASE_SERVICE_ROLE_KEY);
+
+// ============ ROUTES API ============
+
+// 1. Route de connexion
+app.post("/api/auth/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        error: "Email et mot de passe requis",
+      });
+    }
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      return res.status(401).json({
+        success: false,
+        error: "Email ou mot de passe incorrect",
+      });
+    }
+
+    const { data: userData } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", data.user.id)
+      .single();
+
+    res.json({
+      success: true,
+      message: "Connexion réussie",
+      user: {
+        id: data.user.id,
+        email: data.user.email,
+        role: userData?.role || "student",
+        type: userData?.type || "etudiant_interne",
+      },
+    });
+  } catch (error) {
+    console.error("Erreur login:", error);
+    res.status(500).json({
+      success: false,
+      error: "Erreur serveur",
+    });
+  }
 });
 
-// --- 2. FONCTIONS UTILITAIRES ---
-function validateLuhn(number) {
-    let sum = 0;
-    let shouldDouble = false;
-    const sanitized = number.replace(/\s/g, '');
-    if (!/^\d+$/.test(sanitized)) return false;
-    for (let i = sanitized.length - 1; i >= 0; i--) {
-        let digit = parseInt(sanitized.charAt(i));
-        if (shouldDouble) {
-            if ((digit *= 2) > 9) digit -= 9;
-        }
-        sum += digit;
-        shouldDouble = !shouldDouble;
-    }
-    return (sum % 10) === 0 && sanitized.length >= 13;
-}
-
-// --- 3. ROUTES AUTHENTIFICATION ---
-
-// ROUTE D'INSCRIPTION UNIQUE ET ROBUSTE
-app.post("/api/auth/register", authLimiter, async (req, res) => {
-    const { 
-        prenom, nom, email, password, 
-        type_utilisateur, code_inscription, 
-        plan_abonnement, card_info, card_token 
+// 2. Route d'inscription (avec paiement pour étrangers)
+app.post("/api/auth/register", async (req, res) => {
+  try {
+    const {
+      email,
+      password,
+      firstName,
+      lastName,
+      type,
+      codeActivation,
+      subscriptionPlan,
     } = req.body;
 
-    try {
-        // A. Vérification existence utilisateur
-        const { data: existingUser } = await supabase
-            .from('utilisateurs')
-            .select('email')
-            .eq('email', email)
-            .single();
-
-        if (existingUser) {
-            return res.status(400).json({ success: false, message: "Cet email est déjà enregistré." });
-        }
-
-        // B. Validation mot de passe
-        if (!password || password.length < 8) {
-            return res.status(400).json({ success: false, message: "Le mot de passe doit contenir au moins 8 caractères." });
-        }
-
-        // C. Logique de validation métier (Interne vs Etranger)
-        if (type_utilisateur === 'interne') {
-            const { data: codeData, error: codeError } = await supabase
-                .from('codes_academiques')
-                .select('*')
-                .eq('code_valide', code_inscription)
-                .eq('est_utilise', false)
-                .single();
-
-            if (codeError || !codeData) {
-                return res.status(400).json({ success: false, message: "Code académique invalide ou expiré." });
-            }
-            
-            // Marquer le code comme utilisé
-            await supabase.from('codes_academiques').update({ est_utilise: true }).eq('code_valide', code_inscription);
-
-        } else if (type_utilisateur === 'etranger') {
-            // Sécurité Paiement
-            if (card_token) {
-                if (!card_token.startsWith('tok_')) {
-                    return res.status(402).json({ success: false, message: "Référence de paiement invalide." });
-                }
-            } else if (card_info && card_info.number) {
-                if (!validateLuhn(card_info.number)) {
-                    return res.status(400).json({ success: false, message: "Numéro de carte incorrect." });
-                }
-            } else {
-                return res.status(400).json({ success: false, message: "Informations de paiement requises." });
-            }
-        }
-
-        // D. Hachage du mot de passe
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        // E. Insertion de l'utilisateur
-        const { data: newUser, error: insertError } = await supabase
-            .from('utilisateurs')
-            .insert([{
-                prenom, nom, email,
-                password: hashedPassword,
-                type_utilisateur,
-                statut_compte: 'actif',
-                date_inscription: new Date()
-            }])
-            .select().single();
-
-        if (insertError) throw insertError;
-
-        // F. Gestion de l'abonnement (pour les étrangers)
-        if (type_utilisateur === 'etranger') {
-            const duree = plan_abonnement === 'annuel' ? 12 : 1;
-            const expiration = new Date();
-            expiration.setMonth(expiration.getMonth() + duree);
-
-            await supabase.from('abonnements_payants').insert([{
-                user_id: newUser.id,
-                date_fin_validite: expiration,
-                montant_paye: plan_abonnement === 'annuel' ? 100.00 : 10.00,
-                statut_paiement: 'succes'
-            }]);
-        }
-
-        res.status(201).json({ success: true, message: "Inscription réussie." });
-
-    } catch (err) {
-        console.error("Erreur Register:", err);
-        res.status(500).json({ success: false, message: "Erreur lors de la création du compte." });
-    }
-});
-
-// ROUTE LOGIN UNIQUE
-app.post("/api/auth/login", authLimiter, async (req, res) => {
-    const { email, password } = req.body;
-    try {
-        const { data: user, error } = await supabase
-            .from('utilisateurs')
-            .select('*')
-            .eq('email', email)
-            .single();
-
-        if (error || !user) {
-            return res.status(401).json({ success: false, message: "Identifiants incorrects." });
-        }
-
-        // Vérification Bcrypt (Professionnel)
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
-            return res.status(401).json({ success: false, message: "Identifiants incorrects." });
-        }
-
-        const { password: _, ...userWithoutPassword } = user;
-        res.json({ success: true, message: "Connexion réussie", data: { user: userWithoutPassword } });
-
-    } catch (err) {
-        res.status(500).json({ success: false, message: "Erreur technique." });
-    }
-});
-
-// --- 4. DATA & AUTRES ROUTES ---
-const sections = [ { id: 1, name: "Sciences" }, { id: 2, name: "Lettres" }, { id: 3, name: "Droit" }, { id: 4, name: "Économie" } ];
-const niveaux = [ { id: 1, name: "Licence 1" }, { id: 2, name: "Licence 2" }, { id: 3, name: "Licence 3" }, { id: 4, name: "Master" }, { id: 5, name: "Doctorat" } ];
-const categories = ["Tous", "Séries d'exercices", "Sujets d'Examens", "Cours & Supports", "Travaux Dirigés"];
-
-app.get("/api/sections", (req, res) => res.json({ success: true, data: sections }));
-app.get("/api/niveaux", (req, res) => res.json({ success: true, data: niveaux }));
-app.get("/api/categories", (req, res) => res.json({ success: true, data: categories }));
-
-// GET PROFIL
-app.get("/api/users/:id/profil", async (req, res) => {
-    const { data, error } = await supabase.from('utilisateurs').select('*').eq('id', req.params.id).single();
-    if (error || !data) return res.status(404).json({ success: false, message: "Introuvable" });
-    res.json({ success: true, data });
-});
-
-// UPDATE PROFIL
-app.put("/api/users/:id/profil", async (req, res) => {
-    const { prenom, nom, email, email2, niveau, section, avatar_url } = req.body;
-    try {
-        const { data, error } = await supabase
-            .from('utilisateurs')
-            .update({ prenom, nom, email, email2, niveau, section, avatar_url })
-            .eq('id', req.params.id)
-            .select()
-            .single();
-
-        if (error) {
-            console.error("Supabase Error:", error);
-            return res.status(400).json({ success: false, message: error.message });
-        }
-        res.json({ success: true, data });
-    } catch (err) {
-        res.status(500).json({ success: false, message: "Erreur serveur lors de la mise à jour." });
-    }
-});
-
-// --- ROUTES RESSOURCES ---
-
-// 1. Lister les ressources (avec filtres)
-app.get("/api/ressources", async (req, res) => {
-    const { q, section, niveau, categorie } = req.query;
-    let query = supabase.from('ressources').select('*');
-
-    if (q) query = query.ilike('titre', `%${q}%`);
-    if (section) query = query.eq('section', section);
-    if (niveau) query = query.eq('niveau', niveau);
-    if (categorie) {
-        const typeMap = {
-            "Séries d'exercices": "exercices",
-            "Sujets d'Examens":   "examens",
-            "Cours & Supports":   "cours",
-            "Travaux Dirigés":    "td",
-        };
-        const type = typeMap[categorie];
-        if (type) query = query.eq('type_ressource', type);
+    if (!email || !password || !firstName || !lastName || !type) {
+      return res.status(400).json({
+        success: false,
+        error: "Tous les champs sont requis",
+      });
     }
 
-    try {
-        const { data, error } = await query.order('date_creation', { ascending: false });
-        if (error) throw error;
-        res.json({ success: true, data });
-    } catch (err) {
-        res.status(500).json({ success: false, message: "Erreur lors de la récupération des ressources." });
+    // Vérifier si l'utilisateur existe déjà
+    const { data: existingUser } = await supabase
+      .from("users")
+      .select("email")
+      .eq("email", email)
+      .single();
+
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        error: "Cet email est déjà utilisé",
+      });
     }
+
+    // Créer l'utilisateur dans Supabase Auth
+    const { data: authUser, error: signUpError } =
+      await supabase.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: {
+          first_name: firstName,
+          last_name: lastName,
+          user_type: type,
+        },
+      });
+
+    if (signUpError) {
+      return res.status(400).json({
+        success: false,
+        error: signUpError.message,
+      });
+    }
+
+    // ========== ÉTUDIANT / PROFESSEUR INTERNE ==========
+    if (type === "etudiant_interne" || type === "professeur_interne") {
+      await supabase.from("users").insert({
+        id: authUser.user.id,
+        email,
+        role: "user",
+        type: type,
+        status: "active",
+      });
+
+      if (type === "etudiant_interne") {
+        await supabase.from("etudiants_internes").insert({
+          id: authUser.user.id,
+          student_id: `STU${Date.now()}`,
+          first_name: firstName,
+          last_name: lastName,
+          activation_code: codeActivation,
+          status: "active",
+        });
+      } else if (type === "professeur_interne") {
+        await supabase.from("professeurs_internes").insert({
+          id: authUser.user.id,
+          professor_id: `PROF${Date.now()}`,
+          first_name: firstName,
+          last_name: lastName,
+          activation_code: codeActivation,
+          status: "active",
+          department: "Non spécifié",
+        });
+      }
+
+      return res.status(201).json({
+        success: true,
+        message: "Inscription réussie !",
+      });
+    }
+
+    // ========== ÉTUDIANT ÉTRANGER (avec paiement) ==========
+    if (type === "etudiant_etranger") {
+      // Créer l'utilisateur dans la table users (statut pending)
+      await supabase.from("users").insert({
+        id: authUser.user.id,
+        email,
+        role: "user",
+        type: type,
+        status: "pending",
+      });
+
+      // Créer l'étudiant étranger dans foreign_students (inactif)
+      await supabase.from("foreign_students").insert({
+        id: authUser.user.id,
+        country: "Non spécifié",
+        subscription_type: subscriptionPlan || "monthly",
+        subscription_status: "inactive",
+      });
+
+      // Créer un enregistrement de paiement en attente
+      const amount = subscriptionPlan === "monthly" ? 9.99 : 89.99;
+      const transactionId = `TXN_${Date.now()}_${crypto.randomBytes(4).toString("hex")}`;
+
+      await supabase.from("payments").insert({
+        user_id: authUser.user.id,
+        amount: amount,
+        currency: "EUR",
+        status: "pending",
+        transaction_id: transactionId,
+        created_at: new Date(),
+      });
+
+      return res.status(201).json({
+        success: true,
+        requiresPayment: true,
+        userId: authUser.user.id,
+        transactionId: transactionId,
+        amount: amount,
+        message: "Veuillez procéder au paiement",
+      });
+    }
+
+    res.status(400).json({
+      success: false,
+      error: "Type d'utilisateur invalide",
+    });
+  } catch (error) {
+    console.error("Erreur inscription:", error);
+    res.status(500).json({
+      success: false,
+      error: "Erreur serveur",
+    });
+  }
 });
 
-// 2. Ajouter une ressource (Ouvert à tous pour le moment)
-app.post("/api/ressources", async (req, res) => {
-    const { titre, type, section, niveau, annee, userId, url_fichier } = req.body;
-    
-    try {
-        const { data, error } = await supabase.from('ressources').insert([{
-            titre,
-            type_ressource: type,
-            section,
-            niveau,
-            annee_universitaire: annee,
-            user_id: userId,
-            url_fichier: url_fichier || "https://example.com/file.pdf"
-        }]).select().single();
+// ========== ROUTE PAIEMENT (VRAIE INTÉGRATION KONNECT) ==========
+app.post("/api/payment/init", async (req, res) => {
+  try {
+    const { userId, amount, plan } = req.body;
 
-        if (error) throw error;
-        res.status(201).json({ success: true, data });
-    } catch (err) {
-        res.status(500).json({ success: false, message: "Erreur lors de l'ajout de la ressource." });
+    // Konnect attend un montant en centimes (ex: 1000 = 10.00 XAF)
+    const amountInt = Math.round(parseFloat(amount) * 100);
+
+    // Générer un ID de transaction unique
+    const transactionId = `TXN_${Date.now()}_${crypto.randomBytes(4).toString("hex")}`;
+
+    const konnectData = {
+      amount: amountInt,
+      currency: "XAF",
+      receiverWalletId: process.env.KONNECT_WALLET_ID,
+    };
+
+    const response = await fetch(`${process.env.KONNECT_API_URL}/payments/init-payment`, {
+      method: "POST",
+      headers: {
+        "x-api-key": process.env.KONNECT_API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(konnectData),
+    });
+
+    const data = await response.json();
+
+    console.log("📥 Réponse Konnect:", data);
+
+    if (data.payUrl) {
+      // Stocker le paymentRef dans la base
+      await supabase
+        .from("payments")
+        .update({ 
+          transaction_id: data.paymentRef,
+          status: "pending"
+        })
+        .eq("user_id", userId)
+        .eq("status", "pending");
+
+      res.json({
+        success: true,
+        payment_url: data.payUrl,
+        transaction_id: data.paymentRef,
+      });
+    } else {
+      throw new Error("Erreur Konnect: pas de payUrl");
     }
+  } catch (error) {
+    console.error("❌ Erreur Konnect:", error.message);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
 });
 
-// --- 5. DÉMARRAGE ---
-async function testdb() {
-    try {
-        const { error } = await supabase.from('utilisateurs').select('id').limit(1);
-        if (error) console.error("❌ Erreur Supabase :", error.message);
-        else console.log("✅ Connexion Supabase réussie !");
-    } catch (err) { console.error("❌ Erreur de connexion :", err.message); }
-}
+// 4. Route de confirmation de paiement
+app.post("/api/payment/confirm", async (req, res) => {
+  try {
+    const { transaction_id, user_id } = req.body;
 
-testdb();
+    if (!transaction_id || !user_id) {
+      return res.status(400).json({
+        success: false,
+        error: "Transaction ID et User ID requis",
+      });
+    }
 
-const PORT = 3000;
+    // 1. Mettre à jour le statut du paiement
+    await supabase
+      .from("payments")
+      .update({
+        status: "completed",
+        updated_at: new Date(),
+      })
+      .eq("transaction_id", transaction_id);
+
+    // 2. Activer l'utilisateur
+    await supabase
+      .from("users")
+      .update({ status: "active" })
+      .eq("id", user_id);
+
+    // 3. Activer l'étudiant étranger
+    await supabase
+      .from("foreign_students")
+      .update({
+        subscription_status: "active",
+      })
+      .eq("id", user_id);
+
+    res.json({
+      success: true,
+      message: "Paiement confirmé, compte activé",
+    });
+  } catch (error) {
+    console.error("Erreur confirmation paiement:", error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+// Démarrer le serveur
 app.listen(PORT, () => {
-    console.log(`🚀 Serveur pro lancé sur http://localhost:${PORT}`);
+  console.log(`🚀 Serveur démarré sur http://localhost:${PORT}`);
 });
-
-export default app;
