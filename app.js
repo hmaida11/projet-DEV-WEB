@@ -17,36 +17,10 @@ const USER_ID = userSession ? userSession.id : null;
 const USER_NAME = userSession ? (userSession.prenom || "Étudiant") : "Invité";
 
 /* ── Données locales de fallback (si backend éteint) ── */
-const LOCAL_DATA = [
-  { id:1,  titre:"Algèbre linéaire – TD 1",         type:"exercices", section:"Sciences",  niveau:"Licence 1", description:"Espaces vectoriels et applications linéaires." },
-  { id:2,  titre:"Analyse – Examen 2023",            type:"examens",   section:"Sciences",  niveau:"Licence 1", description:"Sujet officiel session principale 2023." },
-  { id:3,  titre:"Physique générale – Cours",        type:"cours",     section:"Sciences",  niveau:"Licence 1", description:"Mécanique newtonienne et thermodynamique." },
-  { id:4,  titre:"Chimie organique – TD 2",          type:"td",        section:"Sciences",  niveau:"Licence 1", description:"Réactions d'addition et de substitution." },
-  { id:5,  titre:"Probabilités – Série 3",           type:"exercices", section:"Sciences",  niveau:"Licence 2", description:"Variables aléatoires discrètes et continues." },
-  { id:6,  titre:"Électromagnétisme – Cours",        type:"cours",     section:"Sciences",  niveau:"Licence 2", description:"Équations de Maxwell et ondes." },
-  { id:7,  titre:"Littérature française – TD",       type:"td",        section:"Lettres",   niveau:"Licence 1", description:"Analyse de texte : Flaubert et Zola." },
-  { id:8,  titre:"Linguistique générale – Cours",    type:"cours",     section:"Lettres",   niveau:"Licence 1", description:"Phonologie, morphologie et syntaxe." },
-  { id:9,  titre:"Littérature – Examen 2022",        type:"examens",   section:"Lettres",   niveau:"Licence 2", description:"Sujet officiel avec corrigé type." },
-  { id:10, titre:"Droit civil – Introduction",       type:"cours",     section:"Droit",     niveau:"Licence 1", description:"Sources du droit et hiérarchie des normes." },
-  { id:11, titre:"Droit constitutionnel – TD 1",     type:"td",        section:"Droit",     niveau:"Licence 1", description:"Séparation des pouvoirs et régimes politiques." },
-  { id:12, titre:"Droit pénal – Examen 2023",        type:"examens",   section:"Droit",     niveau:"Licence 2", description:"Infractions et responsabilité pénale." },
-  { id:13, titre:"Procédure civile – Série d'ex.",   type:"exercices", section:"Droit",     niveau:"Licence 3", description:"Compétences juridictionnelles et voies de recours." },
-  { id:14, titre:"Microéconomie – Cours",            type:"cours",     section:"Économie",  niveau:"Licence 1", description:"Théorie du consommateur et du producteur." },
-  { id:15, titre:"Macroéconomie – TD 1",             type:"td",        section:"Économie",  niveau:"Licence 1", description:"Modèle IS-LM et politique économique." },
-  { id:16, titre:"Statistiques économiques – Série", type:"exercices", section:"Économie",  niveau:"Licence 2", description:"Indices, corrélation et régression." },
-  { id:17, titre:"Finance d'entreprise – Examen",    type:"examens",   section:"Économie",  niveau:"Master",    description:"Analyse financière et évaluation de projets." },
-  { id:18, titre:"Recherche opérationnelle – Cours", type:"cours",     section:"Sciences",  niveau:"Master",    description:"Programmation linéaire et algorithmes." },
-  { id:19, titre:"Droit des affaires – Cours",       type:"cours",     section:"Droit",     niveau:"Master",    description:"Contrats commerciaux et droit des sociétés." },
-  { id:20, titre:"Économétrie – TD avancé",          type:"td",        section:"Économie",  niveau:"Master",    description:"Modèles ARIMA et séries temporelles." },
-  { id:21, titre:"Méthodologie de recherche",        type:"cours",     section:"Sciences",  niveau:"Doctorat",  description:"Rédaction scientifique et normes de citation." },
-  { id:22, titre:"Séminaire : droit comparé",        type:"td",        section:"Droit",     niveau:"Doctorat",  description:"Comparaison des systèmes juridiques." },
-];
-
 /* ── État global ── */
 let state = {
   activeSection: "Tous",
   activeNiveau: null,
-  allData: [...LOCAL_DATA],
   fichiers: [],
   historique: [],
 };
@@ -79,33 +53,13 @@ async function fetchRessources(params = {}) {
   try {
     const res = await fetch(`${API}/ressources?${qs}`);
     const json = await res.json();
-    return json.data;
+    return json.data || [];
   } catch {
-    // Fallback local si backend éteint
-    return filterLocal(params);
+    return [];
   }
 }
 
-function filterLocal({ q = "", section, niveau, categorie } = {}) {
-  const typeMap = {
-    "Séries d'exercices": "exercices",
-    "Sujets d'Examens":   "examens",
-    "Cours & Supports":   "cours",
-    "Travaux Dirigés":    "td",
-  };
-  let data = [...LOCAL_DATA];
-  if (section && section !== "Tous") data = data.filter(r => r.section === section);
-  if (niveau)                        data = data.filter(r => r.niveau === niveau);
-  if (categorie && categorie !== "Tous") {
-    const t = typeMap[categorie];
-    if (t) data = data.filter(r => r.type === t);
-  }
-  if (q.trim()) {
-    const query = q.toLowerCase();
-    data = data.filter(r => r.titre.toLowerCase().includes(query) || r.description.toLowerCase().includes(query));
-  }
-  return data;
-}
+
 
 async function fetchHistorique() {
   try {
@@ -133,12 +87,7 @@ async function addFichier(ressourceId) {
     const json = await res.json();
     return json.success;
   } catch {
-    // Fallback local
-    const item = LOCAL_DATA.find(r => r.id === ressourceId);
-    if (item && !state.fichiers.find(f => f.ressourceId === item.id)) {
-      state.fichiers.push({ ressourceId: item.id, titre: item.titre, type: item.type, dateTelechargement: new Date().toISOString() });
-    }
-    return true;
+    return false;
   }
 }
 
