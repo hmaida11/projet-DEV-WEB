@@ -54,7 +54,8 @@
     </div>
 
     <div class="topbar-avatar" id="avatarBtn" title="Mon compte">
-      <span>A</span>
+      <img id="userAvatarImg" src="" alt="" style="display:none; width:100%; height:100%; border-radius:50%; object-fit:cover;" />
+      <span id="userAvatarInitials">A</span>
       <div class="avatar-dot"></div>
     </div>
   </header>
@@ -274,10 +275,15 @@
       </div>
 
     </main>
-
+    
     <!-- PROFILE PANEL -->
     <aside class="profile-panel">
-      <h3 class="profile-title">Paramètres du Profil</h3>
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 18px 14px;">
+        <h3 class="profile-title" style="margin: 0; padding: 0; border: none;">Paramètres du Profil</h3>
+        <button id="closeProfilePanel" style="background: none; border: none; cursor: pointer; color: var(--text-muted); display: flex; align-items: center;">
+          <svg viewBox="0 0 16 16" fill="none" style="width: 16px; height: 16px;"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </div>
       <ul class="profile-menu">
         <li class="profile-item" id="btnProfil">
           <div class="profile-item-icon settings-icon">
@@ -293,7 +299,7 @@
         </li>
         <li class="profile-item" id="btnFichiers">
           <div class="profile-item-icon files-icon">
-            <svg viewBox="0 0 20 20" fill="none"><path d="M10 3v10M6 9l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 15h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            <svg viewBox="0 0 20 20" fill="none"><path d="M10 3v10M6 9l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round-linejoin="round"/><path d="M4 15h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           </div>
           Fichiers Installés
         </li>
@@ -424,6 +430,7 @@
       </div>
     </div>
   </div>
+
   <script src="app.js"></script>
 </body>
 </html>

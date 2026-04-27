@@ -47,7 +47,6 @@ app.post("/api/auth/register", authLimiter, async (req, res) => {
     } = req.body;
 
     try {
-        let userRole = 'etudiant'; // Par défaut
         // A. Vérification existence utilisateur
         const { data: existingUser } = await supabase
             .from('utilisateurs')
@@ -77,14 +76,10 @@ app.post("/api/auth/register", authLimiter, async (req, res) => {
                 return res.status(400).json({ success: false, message: "Code académique invalide ou expiré." });
             }
             
-            // On récupère le rôle associé au code
-            userRole = codeData.type_code;
-
             // Marquer le code comme utilisé
             await supabase.from('codes_academiques').update({ est_utilise: true }).eq('code_valide', code_inscription);
 
         } else if (type_utilisateur === 'etranger') {
-            userRole = 'etudiant';
             // Sécurité Paiement
             if (card_token) {
                 if (!card_token.startsWith('tok_')) {
@@ -109,7 +104,6 @@ app.post("/api/auth/register", authLimiter, async (req, res) => {
                 prenom, nom, email,
                 password: hashedPassword,
                 type_utilisateur,
-                role: userRole, // Nouveau: On enregistre le rôle (prof ou etudiant)
                 statut_compte: 'actif',
                 date_inscription: new Date()
             }])
@@ -185,11 +179,11 @@ app.get("/api/users/:id/profil", async (req, res) => {
 
 // UPDATE PROFIL
 app.put("/api/users/:id/profil", async (req, res) => {
-    const { prenom, nom, email, niveau, section } = req.body;
+    const { prenom, nom, email, email2, niveau, section, avatar_url } = req.body;
     try {
         const { data, error } = await supabase
             .from('utilisateurs')
-            .update({ prenom, nom, email, niveau, section })
+            .update({ prenom, nom, email, email2, niveau, section, avatar_url })
             .eq('id', req.params.id)
             .select()
             .single();
@@ -234,22 +228,11 @@ app.get("/api/ressources", async (req, res) => {
     }
 });
 
-// 2. Ajouter une ressource (Réservé aux Professeurs)
+// 2. Ajouter une ressource (Ouvert à tous pour le moment)
 app.post("/api/ressources", async (req, res) => {
     const { titre, type, section, niveau, annee, userId, url_fichier } = req.body;
     
     try {
-        // Vérification de sécurité: Est-ce que l'utilisateur est un prof?
-        const { data: user, error: userError } = await supabase
-            .from('utilisateurs')
-            .select('role')
-            .eq('id', userId)
-            .single();
-
-        if (userError || !user || user.role !== 'prof') {
-            return res.status(403).json({ success: false, message: "Accès refusé: Seuls les professeurs peuvent émettre des ressources." });
-        }
-
         const { data, error } = await supabase.from('ressources').insert([{
             titre,
             type_ressource: type,

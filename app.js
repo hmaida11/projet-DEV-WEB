@@ -156,7 +156,7 @@ async function fetchProfil() {
     const json = await res.json();
     return json.data;
   } catch {
-    return { nom: "Ahmed Ben Salem", email: "ahmed@univ.tn", niveau: "Licence 2", section: "Sciences" };
+    return { prenom: "Étudiant", nom: "ISIMM", email: "etudiant@isimm.tn", niveau: "Licence 2", section: "Informatique", role: "etudiant" };
   }
 }
 
@@ -352,8 +352,12 @@ document.getElementById("btnProfil").addEventListener("click", async () => {
         <input class="form-input" id="fNom" value="${fullNom}" />
       </div>
       <div class="form-group">
-        <label class="form-label">Adresse email</label>
-        <input class="form-input" id="fEmail" type="email" value="${profil.email}" />
+        <label class="form-label">Adresse email (Principale - Non modifiable)</label>
+        <input class="form-input" id="fEmail" type="email" value="${profil.email}" readonly style="background: var(--bg-body); cursor: not-allowed; opacity: 0.8;" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Deuxième adresse email</label>
+        <input class="form-input" id="fEmail2" type="email" placeholder="Ex: second@email.com" value="${profil.email2 || ''}" />
       </div>
       <div class="form-group">
         <label class="form-label">Niveau</label>
@@ -376,6 +380,17 @@ document.getElementById("btnProfil").addEventListener("click", async () => {
           <option ${profil.section === 'TIC' ? 'selected' : ''}>TIC</option>
         </select>
       </div>
+      <div class="form-group">
+        <label class="form-label">URL Avatar (Image)</label>
+        <div style="display: flex; gap: 8px;">
+          <input class="form-input" id="fAvatar" placeholder="Lien vers votre image..." value="${profil.avatar_url || ''}" style="flex: 1;" />
+          <button class="btn-secondary" id="btnUploadAvatar" style="padding: 0 12px; white-space: nowrap;">
+             <svg viewBox="0 0 24 24" fill="none" width="18" height="18" style="margin-right: 4px;"><path d="M12 15V3M7 8l5-5 5 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+             Charger
+          </button>
+        </div>
+        <input type="file" id="fileAvatarInput" accept="image/*" style="display: none;" />
+      </div>
       <button class="btn-save" id="saveProfil">Enregistrer les modifications</button>
     </div>
   `);
@@ -390,11 +405,32 @@ document.getElementById("btnProfil").addEventListener("click", async () => {
       prenom:  prenom || "",
       nom:     nom || "",
       email:   document.getElementById("fEmail").value,
+      email2:  document.getElementById("fEmail2").value,
       niveau:  document.getElementById("fNiveau").value,
       section: document.getElementById("fSection").value,
+      avatar_url: document.getElementById("fAvatar").value,
     };
 
     console.log("Data to send:", body);
+
+    // Upload logic for avatar
+    const btnUpload = document.getElementById("btnUploadAvatar");
+    const fileInput = document.getElementById("fileAvatarInput");
+    const avatarField = document.getElementById("fAvatar");
+
+    btnUpload.addEventListener("click", () => fileInput.click());
+
+    fileInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          avatarField.value = event.target.result; // Base64 string
+          showToast("Image chargée avec succès !");
+        };
+        reader.readAsDataURL(file);
+      }
+    });
 
     try {
       const res = await fetch(`${API}/users/${USER_ID}/profil`, {
@@ -630,49 +666,97 @@ document.getElementById("modalOverlay").addEventListener("click", e => {
    INIT
 ════════════════════════════════════════════════ */
 (async function init() {
-  // Mise à jour de l'UI avec les infos de session
-  const avatarSpan = document.querySelector(".topbar-avatar span");
-  if (avatarSpan) avatarSpan.textContent = USER_NAME.charAt(0).toUpperCase();
+  try {
+    const profil = await fetchProfil();
 
-  // Nouveau: Masquer le bouton Émettre pour les étudiants
-  const btnEmettre = document.getElementById("btnEmettre");
-  if (userSession && userSession.role !== 'prof') {
-    if (btnEmettre) btnEmettre.style.display = 'none';
-  }
+    // Update UI with Avatar
+    const avatarImg = document.getElementById("userAvatarImg");
+    const avatarInitials = document.getElementById("userAvatarInitials");
+    
+    if (profil) {
+      if (profil.avatar_url) {
+        avatarImg.src = profil.avatar_url;
+        avatarImg.style.display = 'block';
+        avatarInitials.style.display = 'none';
+      } else {
+        avatarInitials.textContent = (profil.prenom || "A").charAt(0).toUpperCase();
+        avatarImg.style.display = 'none';
+        avatarInitials.style.display = 'block';
+      }
 
-  // Automatic filters based on profile
-  const profil = await fetchProfil();
-  if (profil && profil.role === 'etudiant') {
-    if (profil.section) {
-      state.activeSection = profil.section;
-      document.querySelectorAll(".nav-item[data-filter='section']").forEach(el => {
-        el.classList.toggle("active", el.dataset.value === profil.section);
-      });
+      // Automatic filters based on profile
+      if (profil.section) {
+        state.activeSection = profil.section;
+        document.querySelectorAll(".nav-item[data-filter='section']").forEach(el => {
+          el.classList.toggle("active", el.dataset.value === profil.section);
+        });
+      }
+      if (profil.niveau) {
+        state.activeNiveau = profil.niveau;
+        document.querySelectorAll(".nav-item[data-filter='niveau']").forEach(el => {
+          el.classList.toggle("active", el.dataset.value === profil.niveau);
+        });
+      }
     }
-    if (profil.niveau) {
-      state.activeNiveau = profil.niveau;
-      document.querySelectorAll(".nav-item[data-filter='niveau']").forEach(el => {
-        el.classList.toggle("active", el.dataset.value === profil.niveau);
-      });
-    }
-  }
 
-  const data = await fetchRessources();
-  renderCards(data);
-  const statTotal = document.getElementById("statTotal");
-  if (statTotal) statTotal.textContent = data.length;
+    // Show Émettre button for everyone as requested
+    const btnEmettre = document.getElementById("btnEmettre");
+    if (btnEmettre) btnEmettre.style.display = 'flex';
+
+    const data = await fetchRessources();
+    renderCards(data);
+    const statTotal = document.getElementById("statTotal");
+    if (statTotal) statTotal.textContent = data.length;
+  } catch (err) {
+    console.error("Initialization error:", err);
+  }
 })();
 
-// Logout logic with confirmation
+// Logout logic
 document.getElementById("btnDeconnexion").addEventListener("click", () => {
   openModal("Déconnexion", `
     <p style="margin-bottom:16px">Êtes-vous sûr de vouloir vous déconnecter ?</p>
     <button class="btn-save" style="background:var(--accent-red)" id="confirmLogout">Confirmer la déconnexion</button>
   `);
-  
   document.getElementById("confirmLogout").addEventListener("click", () => {
     localStorage.removeItem('userSession');
     window.location.href = "index.html";
   });
 });
 
+// ════════════════════════════════════════════════
+// TOGGLE PROFILE PANEL (AVATAR CLICK)
+// ════════════════════════════════════════════════
+function setupProfileToggle() {
+  const avatarBtn = document.getElementById("avatarBtn");
+  const profilePanel = document.querySelector(".profile-panel");
+  const closeBtn = document.getElementById("closeProfilePanel");
+
+  if (!avatarBtn || !profilePanel) return;
+
+  avatarBtn.addEventListener("click", (e) => {
+    console.log("Avatar clicked!");
+    e.preventDefault();
+    e.stopPropagation();
+    profilePanel.classList.toggle("open");
+  });
+
+  if (closeBtn) {
+    closeBtn.addEventListener("click", () => {
+      console.log("Close clicked!");
+      profilePanel.classList.remove("open");
+    });
+  }
+
+  document.addEventListener("click", (e) => {
+    if (!profilePanel.contains(e.target) && !avatarBtn.contains(e.target)) {
+      if (profilePanel.classList.contains("open")) {
+        console.log("Clicked outside!");
+        profilePanel.classList.remove("open");
+      }
+    }
+  });
+}
+
+// Call setup
+setupProfileToggle();
