@@ -4,7 +4,12 @@ import dotenv from "dotenv";
 import { createClient } from "@supabase/supabase-js";
 import crypto from "crypto";
 
-dotenv.config();
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.resolve(__dirname, ".env") });
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -65,10 +70,10 @@ app.post("/api/auth/login", async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Erreur login:", error);
+    console.error("❌ Erreur serveur lors du login:", error.message);
     res.status(500).json({
       success: false,
-      error: "Erreur serveur",
+      error: "Erreur serveur: " + error.message,
     });
   }
 });
