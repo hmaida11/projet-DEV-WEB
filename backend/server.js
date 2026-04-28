@@ -58,7 +58,7 @@ app.post("/api/auth/login", async (req, res) => {
     }
 
     const { data: userData } = await supabase
-      .from("users")
+      .from("utilisateurs")
       .select("*")
       .eq("id", data.user.id)
       .single();
@@ -109,7 +109,7 @@ app.post("/api/auth/register", async (req, res) => {
       }
 
       const expectedType = type === "etudiant_interne" ? "etudiant" : "prof";
-      
+
       const { data: codeData, error: codeError } = await supabase
         .from("codes_academiques")
         .select("*")
@@ -128,7 +128,7 @@ app.post("/api/auth/register", async (req, res) => {
 
     // Vérifier si l'utilisateur existe déjà
     const { data: existingUser } = await supabase
-      .from("users")
+      .from("utilisateurs")
       .select("email")
       .eq("email", email)
       .single();
@@ -168,7 +168,7 @@ app.post("/api/auth/register", async (req, res) => {
         .update({ est_utilise: true })
         .eq("code_valide", codeActivation);
 
-      await supabase.from("users").insert({
+      await supabase.from("utilisateurs").insert({
         id: authUser.user.id,
         email,
         role: "user",
@@ -206,7 +206,7 @@ app.post("/api/auth/register", async (req, res) => {
     // ========== ÉTUDIANT ÉTRANGER (avec paiement) ==========
     if (type === "etudiant_etranger") {
       // Créer l'utilisateur dans la table users (statut pending)
-      await supabase.from("users").insert({
+      await supabase.from("utilisateurs").insert({
         id: authUser.user.id,
         email,
         role: "user",
@@ -386,7 +386,7 @@ app.post("/api/payment/init", async (req, res) => {
       // Stocker le paymentRef dans la base
       await supabase
         .from("payments")
-        .update({ 
+        .update({
           transaction_id: data.paymentRef,
           status: "pending"
         })
@@ -433,7 +433,7 @@ app.post("/api/payment/confirm", async (req, res) => {
 
     // 2. Activer l'utilisateur
     await supabase
-      .from("users")
+      .from("utilisateurs")
       .update({ status: "active" })
       .eq("id", user_id);
 
@@ -472,7 +472,7 @@ app.post("/api/auth/forgot-password", async (req, res) => {
 
     // On vérifie d'abord si l'utilisateur existe dans notre table users
     const { data: user, error: userError } = await supabase
-      .from("users")
+      .from("utilisateurs")
       .select("email")
       .eq("email", email)
       .single();
@@ -522,7 +522,7 @@ app.post("/api/auth/reset-password", async (req, res) => {
 
     // Récupérer l'ID de l'utilisateur par son email
     const { data: user, error: userError } = await supabase
-      .from("users")
+      .from("utilisateurs")
       .select("id")
       .eq("email", email)
       .single();
